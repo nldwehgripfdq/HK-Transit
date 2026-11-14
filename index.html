@@ -130,9 +130,16 @@ const MTR_NET = {"lines":{"AEL":{"name":"機場快綫","stations":[{"c":"HOK","z
     Object.entries(MTR_STATIONS).forEach(([code, info]) => { ID_TO_CODE[String(info.id)] = code; });
 
     const MTR_LINE_ID_MAP = {
-      11: "ISL", 12: "TWL", 13: "KTL", 14: "TCL", 15: "AEL",
-      16: "TKL", 17: "EAL", 18: "DRL", 19: "SIL", 20: "TML", 21: "TML"
-    };
+
+  11:"TWL", // 荃灣綫
+  12:"KTL", // 觀塘綫
+  13:"ISL", // 港島綫
+
+  17:"EAL", // 東鐵綫
+
+  28:"TML"  // 屯馬綫
+
+};
 
     function lineDot(lc){
       const c = MTR_COLORS[lc] || "#888";
@@ -325,21 +332,9 @@ async function getVariantLabel(meta){
     function refreshKmb(){ kmbPresets.forEach((_,i)=>loadKmbEta(i)); }
 
     // ===== OFFICIAL MTR HRROUTES API =====
-    function resolveLineCode(lineId, staA, staB){
-      if(MTR_LINE_ID_MAP[lineId]){
-        const mapped = MTR_LINE_ID_MAP[lineId];
-        if(MTR_LINE_POS[mapped]?.[staA] !== undefined && MTR_LINE_POS[mapped]?.[staB] !== undefined){
-          return mapped;
-        }
-      }
-      for(const lc of Object.keys(MTR_LINE_POS)){
-        const pos = MTR_LINE_POS[lc];
-        if(pos[staA] !== undefined && pos[staB] !== undefined && Math.abs(pos[staA] - pos[staB]) === 1){
-          return lc;
-        }
-      }
-      return MTR_LINE_ID_MAP[lineId] || 'EAL';
-    }
+    function resolveLineCode(){
+  return null;
+}
 
     async function fetchOfficialMtrRoutes(fromCode, toCode){
       const oId = MTR_STATIONS[fromCode]?.id;
@@ -371,51 +366,165 @@ async function getVariantLabel(meta){
       const lastTrain = data.lastTrain?.time || '';
 
       return data.routes.map(route => {
-        const rawPath = route.path || [];
-        const stationCodes = [];
-        const segmentLines = [];
 
-        for(let i = 0; i < rawPath.length; i++){
-          const code = ID_TO_CODE[String(rawPath[i].ID)];
-          if(!code) continue;
-          if(stationCodes.length && stationCodes[stationCodes.length - 1] === code) continue;
-          stationCodes.push(code);
-          if(stationCodes.length > 1){
-            const prevCode = stationCodes[stationCodes.length - 2];
-            const lc = resolveLineCode(rawPath[i - 1].lineID, prevCode, code);
-            segmentLines.push(lc);
-          }
-        }
+  const rawPath = route.path || [];
+  console.table(
+  rawPath.map(p => ({
+    station: p.ID,
+    line: p.lineID,
+    type: p.linkType,
+    text: p.linkText
+  }))
+);
 
-        const legs = [];
-        let i = 0;
-        while(i < segmentLines.length){
-          let j = i;
-          while(j < segmentLines.length && segmentLines[j] === segmentLines[i]) j++;
-          const line = segmentLines[i];
-          const from = stationCodes[i];
-          const to = stationCodes[j];
-          const pa = MTR_LINE_POS[line]?.[from] ?? 0;
-          const pb = MTR_LINE_POS[line]?.[to] ?? 0;
-          legs.push({
-            line,
-            from,
-            to,
-            hops: j - i,
-            stations: j - i + 1,
-            dir: pb > pa ? 'UP' : 'DOWN'
-          });
-          i = j;
-        }
+  console.log("========== ROUTE ==========");
+
+  rawPath.forEach(p => {
+    console.log(
+      "ID:",
+      p.ID,
+      "lineID:",
+      p.lineID,
+      "linkType:",
+      p.linkType,
+      "text:",
+      p.linkText
+    );
+  });
+
+  const API_LINE_MAP = {
+  11: "TWL", // 荃灣綫
+  12: "KTL", // 觀塘綫
+  13: "ISL", // 港島綫
+  14: "TCL", // 東涌綫
+  15: "TKL", // 將軍澳綫
+  16: "DRL", // 迪士尼綫
+  17: "EAL", // 東鐵綫
+  27: "SIL", // 南港島綫
+  28: "TML"  // 屯馬綫
+};
+
+const legs = [];
+
+let currentLineId = null;
+let currentStations = [];
+
+for(const p of rawPath){
+
+  const stationCode =
+    ID_TO_CODE[String(p.ID)];
+
+  if(!stationCode) continue;
+
+  const lineCode =
+    API_LINE_MAP[p.lineID]
+    || `LINE_${p.lineID}`;
+
+  if(!currentLineId){
+
+    currentLineId = lineCode;
+    currentStations = [stationCode];
+
+    continue;
+  }
+
+  const needNewLeg =
+      p.linkType === "INTERCHANGE"
+      || p.linkType === "INTERCHANGE"
+
+  if(needNewLeg){
+
+    // add interchange station
+    // to previous line
+
+    currentStations.push(
+      stationCode
+    );
+
+    legs.push({
+
+      line: currentLineId,
+
+      from: currentStations[0],
+
+      to: currentStations[
+        currentStations.length - 1
+      ],
+
+      hops:
+        Math.max(
+          currentStations.length - 1,
+          1
+        ),
+
+      stations:
+        currentStations.length
+
+    });
+
+    // start next leg
+    // from same station
+
+    currentLineId = lineCode;
+
+    currentStations = [
+      stationCode
+    ];
+
+    continue;
+}
+
+  currentStations.push(
+    stationCode
+  );
+}
+
+if(currentStations.length){
+
+  legs.push({
+
+    line: currentLineId,
+
+    from: currentStations[0],
+
+    to: currentStations[
+      currentStations.length - 1
+    ],
+
+    hops:
+      Math.max(
+        currentStations.length - 1,
+        1
+      ),
+
+    stations:
+      currentStations.length
+  });
+}
 
         const stdFare = route.fares?.find(f => f.fareTitle === 'standardClass')?.fareInfo;
         const octopusFare = stdFare?.adult?.octopus || '';
 
-        return {
-          path: stationCodes,
-          lines: segmentLines,
-          legs,
-          totalStops: Math.max(0, stationCodes.length - 1),
+        const stationCodes =
+  rawPath
+    .map(x =>
+      ID_TO_CODE[String(x.ID)]
+    )
+    .filter(Boolean);
+
+return {
+  path: stationCodes,
+
+  lines:
+    legs.map(l => l.line),
+
+  legs,
+
+  totalStops:
+    Math.max(
+      0,
+      stationCodes.length - 1
+    ),
           ix: Math.max(0, legs.length - 1),
           journeyTime: route.time,
           walkingTime: route.walkingTime ?? 0,
