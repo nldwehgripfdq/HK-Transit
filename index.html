@@ -188,11 +188,21 @@ const MTR_NET = {"lines":{"AEL":{"name":"機場快綫","stations":[{"c":"HOK","z
     // ===== KMB =====
     function saveKmb(){ localStorage.setItem('a9_kmb', JSON.stringify(kmbPresets)); }
     function renderKmb(){
-      const box = document.getElementById('kmbPresets');
-      if(!kmbPresets.length){
-        box.innerHTML = `<div class="empty-state"><div style="font-size:2.2rem">🚏</div><p>尚未設定九巴路線</p><button class="btn btn-primary" style="max-width:180px;margin:0 auto" onclick="openSettings()">+ 新增路線</button></div>`;
-        return;
-      }
+  const box = document.getElementById('kmbPresets');
+  if(!kmbPresets.length){
+    box.innerHTML = '<div class="empty-state"><div style="font-size:2.2rem">🚏</div><p>尚未設定九巴路線</p><button class="btn btn-primary" style="max-width:180px;margin:0 auto" onclick="openSettings()">+ 新增路線</button></div>';
+    return;
+  }
+  box.innerHTML = kmbPresets.map((p,i) => {
+    const dir = (p.orig_tc && p.dest_tc) ? (p.orig_tc + ' → ' + p.dest_tc) : (p.dest_tc || '');
+    const specBadge = (p.service_type && String(p.service_type) !== '1')
+      ? '<span style="font-size:.72rem;background:rgba(251,191,36,.15);color:#fbbf24;padding:2px 7px;border-radius:8px">特別班次</span>'
+      : '';
+    return '<div class="preset-card"><div class="preset-header"><div style="flex:1;min-width:0"><div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span class="preset-route">' + p.route + '</span>' + specBadge + '</div><div class="preset-dest">' + dir + '</div><div class="preset-stop">📍 ' + p.stopName + '</div></div><div style="display:flex;gap:6px"><button class="icon-btn" onclick="loadKmbEta(' + i + ')">↻</button><button class="icon-btn danger" onclick="removeKmb(' + i + ')">✕</button></div></div><div id="kmb-eta-' + i + '"><div class="status"><span class="spinner"></span> 載入中…</div></div></div>';
+  }).join('');
+  kmbPresets.forEach((_,i) => loadKmbEta(i));
+}
+
       box.innerHTML = kmbPresets.map((p,i) => {
         const dir = (p.orig_tc&&p.dest_tc)?`${p.orig_tc} → ${p.dest_tc}`:(p.dest_tc||'');
         const bound = p.bound==='O'?'去程':'回程';
@@ -476,45 +486,95 @@ const MTR_NET = {"lines":{"AEL":{"name":"機場快綫","stations":[{"c":"HOK","z
       if(!kmbPresets.length){el.innerHTML='<div style="color:var(--muted);font-size:.85rem">（無）</div>';return;}
       el.innerHTML=kmbPresets.map((p,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #2a2a3a;font-size:.9rem"><span><strong style="color:var(--accent)">${p.route}</strong> · ${p.stopName}</span><button class="icon-btn danger" style="width:28px;height:28px" onclick="removeKmb(${i});openSettings()">✕</button></div>`).join('');
     }
-    async function fetchKmbDirections(){
-      const route=document.getElementById('cfgRoute').value.trim().toUpperCase();
-      const hint=document.getElementById('cfgHint');
-      document.getElementById('cfgDirSection').classList.add('hidden');
-      document.getElementById('cfgStopSection').classList.add('hidden');
-      document.getElementById('saveBtn').disabled=true;
-      if(!route){hint.textContent='請輸入路線號碼';return;}
-      hint.innerHTML='<span class="spinner"></span> 搜尋中…';
+    async function ensureKmbStopMap(){
+  if(stopMap) return stopMap;
+  const j = await (await fetch('https://etabus.gov.hk')).json();
+  stopMap = {};
+  (j.data || []).forEach(s => stopMap[s.stop] = s);
+  return stopMap;
+}
+
+async function fetchKmbDirections(){
+  const route = document.getElementById('cfgRoute').value.trim().toUpperCase();
+  const hint = document.getElementById('cfgHint');
+  document.getElementById('cfgDirSection').classList.add('hidden');
+  document.getElementById('cfgStopSection').classList.add('hidden');
+  document.getElementById('saveBtn').disabled = true;
+  if(!route){ hint.textContent = '請輸入路線號碼'; return; }
+  hint.innerHTML = '<span class="spinner"></span> 搜尋路線及比對班次…';
+
+  try{
+    const matches = (await (await fetch('https://etabus.gov.hk')).json()).data.filter(r => r.route === route);
+    if(!matches.length){ hint.textContent = '找不到此路線'; return; }
+
+    // Fetch stop lists for all matched variants to compare normal vs special services
+    await ensureKmbStopMap();
+    const stopLists = {};
+    await Promise.all(matches.map(async m => {
+      const dir = m.bound === 'O' ? 'outbound' : 'inbound';
+      const key = m.bound + '_' + m.service_type;
       try{
-        const matches=(await (await fetch('https://data.etabus.gov.hk/v1/transport/kmb/route/')).json()).data.filter(r=>r.route===route);
-        if(!matches.length){hint.textContent='找不到此路線';return;}
-        hint.textContent=`找到 ${matches.length} 個方向`;
-        document.getElementById('cfgDirList').innerHTML=matches.map(m=>{
-          const o=m.orig_tc||m.orig_en,d=m.dest_tc||m.dest_en;
-          const bound=m.bound==='O'?'去程':'回程';
-          return `<button class="btn btn-secondary" style="text-align:left;padding:12px 14px" onclick='selectKmbDir(${JSON.stringify(m).replace(/'/g,"&#39;")})'><div style="font-weight:700">${bound}</div><div style="font-size:.9rem">${o} → ${d}</div></button>`;
-        }).join('');
-        document.getElementById('cfgDirSection').classList.remove('hidden');
-      }catch(e){hint.textContent='Error: '+e.message;}
-    }
-    async function selectKmbDir(meta){
-      _cfg={type:'kmb',meta};
-      const hint=document.getElementById('cfgHint');
-      hint.innerHTML='<span class="spinner"></span> 載入車站…';
-      document.getElementById('cfgStopSection').classList.add('hidden');
-      document.getElementById('saveBtn').disabled=true;
-      try{
-        if(!stopMap){ const j=await (await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop')).json(); stopMap={}; j.data.forEach(s=>stopMap[s.stop]=s); }
-        const dir=meta.bound==='O'?'outbound':'inbound';
-        const stops=(await (await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${meta.route}/${dir}/${meta.service_type}`)).json()).data||[];
-        document.getElementById('cfgStop').innerHTML=stops.map((s,i)=>{
-          const name=(stopMap[s.stop]||{}).name_tc||s.stop;
-          return `<option value="${s.stop}" data-name="${name.replace(/"/g,'&quot;')}">${i+1}. ${name}</option>`;
-        }).join('');
-        document.getElementById('cfgStopSection').classList.remove('hidden');
-        document.getElementById('saveBtn').disabled=false;
-        hint.textContent=`${stops.length} 個車站`;
-      }catch(e){hint.textContent='Error: '+e.message;}
-    }
+        const res = await (await fetch('https://etabus.gov.hk' + m.route + '/' + dir + '/' + m.service_type)).json();
+        stopLists[key] = (res.data || []).map(s => s.stop);
+      }catch(e){ stopLists[key] = []; }
+    }));
+
+    const cleanName = id => ((stopMap[id] || {}).name_tc || id).replace(/\s*\([A-Z0-9]+\)\s*$/, '');
+
+    hint.textContent = '找到 ' + matches.length + ' 個班次選項';
+    document.getElementById('cfgDirList').innerHTML = matches.map(m => {
+      const o = m.orig_tc || m.orig_en;
+      const d = m.dest_tc || m.dest_en;
+      const isNormal = String(m.service_type) === '1';
+      const myStops = stopLists[m.bound + '_' + m.service_type] || [];
+      const baseStops = stopLists[m.bound + '_1'] || [];
+
+      let badgeHtml = isNormal
+        ? '<span style="font-size:.75rem;color:var(--accent);font-weight:700">正常班次</span>'
+        : '<span style="font-size:.75rem;color:#fbbf24;font-weight:700">特別班次</span>';
+
+      let diffText = '共 ' + myStops.length + ' 站';
+      if(!isNormal && baseStops.length && myStops.length){
+        const baseSet = new Set(baseStops);
+        const mySet = new Set(myStops);
+        const skipped = [...new Set(baseStops.filter(id => !mySet.has(id)).map(cleanName))];
+        const added = [...new Set(myStops.filter(id => !baseSet.has(id)).map(cleanName))];
+        const parts = [];
+        if(skipped.length) parts.push('不經：' + skipped.slice(0, 4).join('、') + (skipped.length > 4 ? ' 等' + skipped.length + '站' : ''));
+        if(added.length) parts.push('改經：' + added.slice(0, 4).join('、') + (added.length > 4 ? ' 等' + added.length + '站' : ''));
+        if(parts.length) diffText += ' · ' + parts.join('；');
+      }
+
+      const metaStr = JSON.stringify(m).replace(/'/g, "&#39;");
+      return '<button class="btn btn-secondary" style="text-align:left;padding:12px 14px" onclick=\'selectKmbDir(' + metaStr + ')\'>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">' + badgeHtml + '<span style="font-size:.75rem;color:var(--muted)">' + diffText + '</span></div>' +
+        '<div style="font-size:.92rem;font-weight:700">' + o + ' → ' + d + '</div>' +
+      '</button>';
+    }).join('');
+    document.getElementById('cfgDirSection').classList.remove('hidden');
+  }catch(e){ hint.textContent = 'Error: ' + e.message; }
+}
+
+async function selectKmbDir(meta){
+  _cfg = { type: 'kmb', meta };
+  const hint = document.getElementById('cfgHint');
+  hint.innerHTML = '<span class="spinner"></span> 載入車站…';
+  document.getElementById('cfgStopSection').classList.add('hidden');
+  document.getElementById('saveBtn').disabled = true;
+  try{
+    await ensureKmbStopMap();
+    const dir = meta.bound === 'O' ? 'outbound' : 'inbound';
+    const stops = (await (await fetch('https://etabus.gov.hk' + meta.route + '/' + dir + '/' + meta.service_type)).json()).data || [];
+    document.getElementById('cfgStop').innerHTML = stops.map((s,i) => {
+      const name = (stopMap[s.stop] || {}).name_tc || s.stop;
+      return '<option value="' + s.stop + '" data-name="' + name.replace(/"/g, '&quot;') + '">' + (i+1) + '. ' + name + '</option>';
+    }).join('');
+    document.getElementById('cfgStopSection').classList.remove('hidden');
+    document.getElementById('saveBtn').disabled = false;
+    hint.textContent = stops.length + ' 個車站';
+  }catch(e){ hint.textContent = 'Error: ' + e.message; }
+}
+
 
     function openMtrSettings(){
       const lineOpts=Object.keys(MTR_LINES).map(lc=>`<option value="${lc}">${MTR_LINES[lc].name}</option>`).join('');
