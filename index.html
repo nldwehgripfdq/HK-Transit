@@ -33,9 +33,9 @@
     .weather-desc{grid-column:1/-1;font-size:.78rem;color:var(--muted);margin-top:2px}
     .preset-card{background:var(--card);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;border:1px solid rgba(255,255,255,.05)}
     .preset-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
-    .preset-route{font-size:1.15rem;font-weight:800;color:var(--accent)}
-    .preset-dest{font-size:.85rem;color:var(--muted);margin-top:3px;line-height:1.35}
-    .preset-stop{font-size:.9rem;font-weight:600;margin-top:4px}
+    .preset-route{font-size:1.1rem;font-weight:800;color:var(--accent);display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+    .preset-dest{font-size:.85rem;color:var(--muted);margin-top:4px;line-height:1.4}
+    .preset-stop{font-size:.85rem;font-weight:500;margin-top:3px;color:var(--text)}
     .icon-btn{background:none;border:1px solid #333;color:var(--muted);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:.9rem;display:inline-flex;align-items:center;justify-content:center}
     .icon-btn:hover{border-color:var(--accent);color:var(--accent)}
     .icon-btn.danger:hover{border-color:var(--danger);color:var(--danger)}
@@ -68,7 +68,7 @@
     .path-option:hover,.path-option.selected{border-color:var(--accent);background:rgba(76,201,240,.08)}
     .leg-block{margin-top:10px;padding-top:10px;border-top:1px solid #2a2a3a}
     .leg-title{font-size:.85rem;font-weight:700;margin-bottom:6px}
-    .train-hours{display:inline-block;font-size:.74rem;background:rgba(76,201,240,.12);color:var(--accent);padding:2px 8px;border-radius:6px;margin-top:5px}
+    .train-hours{display:inline-block;font-size:.74rem;background:rgba(76,201,240,.12);color:var(--accent);padding:2px 8px;border-radius:6px;margin-top:6px}
   </style>
 </head>
 <body>
@@ -127,7 +127,7 @@ const MTR_LINE_ID_MAP = {11:"ISL",12:"TWL",13:"KTL",14:"TCL",15:"AEL",16:"TKL",1
 
 function lineDot(lc){
   const c = MTR_COLORS[lc] || "#888";
-  return `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c};margin-right:6px;vertical-align:middle"></span>`;
+  return '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + c + ';margin-right:5px;vertical-align:middle"></span>';
 }
 
 let currentTab = 'kmb';
@@ -159,7 +159,7 @@ async function loadWeather(){
       const isToday = day.forecastDate === todayStr;
       const icon = iconMap[day.ForecastIcon] || '🌤';
       const dateStr = day.forecastDate.slice(4,6)+'/'+day.forecastDate.slice(6);
-      return `<div class="day-row ${isToday?'today':''}"><div><div class="day-name">${isToday?'今日':day.week}</div><div class="day-date">${dateStr}</div></div><div class="weather-icon">${icon}</div><div><div class="temps">${day.forecastMaxtemp.value}° <span>/ ${day.forecastMintemp.value}°</span></div><div class="weather-desc">${day.forecastWeather}</div></div><div class="psr-badge">PSR ${day.PSR}</div></div>`;
+      return '<div class="day-row ' + (isToday?'today':'') + '"><div><div class="day-name">' + (isToday?'今日':day.week) + '</div><div class="day-date">' + dateStr + '</div></div><div class="weather-icon">' + icon + '</div><div><div class="temps">' + day.forecastMaxtemp.value + '° <span>/ ' + day.forecastMintemp.value + '°</span></div><div class="weather-desc">' + day.forecastWeather + '</div></div><div class="psr-badge">PSR ' + day.PSR + '</div></div>';
     }).join('');
     try{
       const ut = new Date(data.updateTime);
@@ -171,7 +171,7 @@ async function loadWeather(){
 function updateWeatherClock(){
   const el = document.getElementById('weatherUpdate'); if(!el) return;
   const nowStr = new Date().toLocaleString('zh-HK',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
-  el.textContent = window._hkoUpdateStr ? `天文台更新於 ${window._hkoUpdateStr} · 現在 ${nowStr}` : `現在 ${nowStr}`;
+  el.textContent = window._hkoUpdateStr ? '天文台更新於 ' + window._hkoUpdateStr + ' · 現在 ' + nowStr : '現在 ' + nowStr;
 }
 
 // ===== KMB =====
@@ -179,24 +179,24 @@ function saveKmb(){ localStorage.setItem('a9_kmb', JSON.stringify(kmbPresets)); 
 function renderKmb(){
   const box = document.getElementById('kmbPresets');
   if(!kmbPresets.length){
-    box.innerHTML = `<div class="empty-state"><div style="font-size:2.2rem">🚏</div><p>尚未設定九巴路線</p><button class="btn btn-primary" style="max-width:180px;margin:0 auto" onclick="openSettings()">+ 新增路線</button></div>`;
+    box.innerHTML = '<div class="empty-state"><div style="font-size:2.2rem">🚏</div><p>尚未設定九巴路線</p><button class="btn btn-primary" style="max-width:180px;margin:0 auto" onclick="openSettings()">+ 新增路線</button></div>';
     return;
   }
   box.innerHTML = kmbPresets.map((p,i) => {
-    const dir = (p.orig_tc&&p.dest_tc) ? `${p.orig_tc} → ${p.dest_tc}` : (p.dest_tc||'');
+    const dir = (p.orig_tc&&p.dest_tc) ? (p.orig_tc + ' → ' + p.dest_tc) : (p.dest_tc||'');
     const bound = p.bound==='O'?'去程':'回程';
-    return `<div class="preset-card"><div class="preset-header"><div style="flex:1;min-width:0"><div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span class="preset-route">${p.route}</span><span style="font-size:.72rem;background:#2a2a3a;padding:2px 7px;border-radius:8px;color:var(--muted)">${bound}</span></div><div class="preset-dest">${dir}</div><div class="preset-stop">📍 ${p.stopName}</div></div><div style="display:flex;gap:6px"><button class="icon-btn" onclick="loadKmbEta(${i})">↻</button><button class="icon-btn danger" onclick="removeKmb(${i})">✕</button></div></div><div id="kmb-eta-${i}"><div class="status"><span class="spinner"></span> 載入中…</div></div></div>`;
+    return '<div class="preset-card"><div class="preset-header"><div style="flex:1;min-width:0"><div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span class="preset-route">' + p.route + '</span><span style="font-size:.72rem;background:#2a2a3a;padding:2px 7px;border-radius:8px;color:var(--muted)">' + bound + '</span></div><div class="preset-dest">' + dir + '</div><div class="preset-stop">📍 ' + p.stopName + '</div></div><div style="display:flex;gap:6px"><button class="icon-btn" onclick="loadKmbEta(' + i + ')">↻</button><button class="icon-btn danger" onclick="removeKmb(' + i + ')">✕</button></div></div><div id="kmb-eta-' + i + '"><div class="status"><span class="spinner"></span> 載入中…</div></div></div>';
   }).join('');
   kmbPresets.forEach((_,i)=>loadKmbEta(i));
 }
 async function loadKmbEta(i){
   const p=kmbPresets[i], el=document.getElementById('kmb-eta-'+i); if(!p||!el) return;
   try{
-    let res=await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/eta/${p.stopId}/${p.route}/${p.service_type||'1'}`);
+    let res=await fetch('https://data.etabus.gov.hk/v1/transport/kmb/eta/' + p.stopId + '/' + p.route + '/' + (p.service_type||'1'));
     let json=await res.json();
     let etas=(json.data||[]).filter(e=>e.eta);
     if(!etas.length){
-      res=await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${p.stopId}`);
+      res=await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/' + p.stopId);
       json=await res.json();
       etas=(json.data||[]).filter(e=>e.route===p.route&&e.eta);
     }
@@ -213,7 +213,7 @@ function renderEtas(el,etas){
     else if(mins<=5){timeStr=mins+' 分鐘';cls='soon';}
     else if(mins<=15){timeStr=mins+' 分鐘';cls='mid';}
     else{timeStr=mins+' 分鐘';cls='late';}
-    return `<div class="eta-row"><div class="eta-meta">${e.dest_tc||''}${e.rmk_tc?' · '+e.rmk_tc:''}</div><div class="eta-time ${cls}">${timeStr}</div></div>`;
+    return '<div class="eta-row"><div class="eta-meta">' + (e.dest_tc||'') + (e.rmk_tc?' · '+e.rmk_tc:'') + '</div><div class="eta-time ' + cls + '">' + timeStr + '</div></div>';
   }).join('');
 }
 function removeKmb(i){ if(!confirm('刪除此九巴路線？'))return; kmbPresets.splice(i,1); saveKmb(); renderKmb(); }
@@ -241,11 +241,11 @@ async function fetchOfficialMtrRoutes(fromCode, toCode){
   const dId = MTR_STATIONS[toCode]?.id;
   if(!oId || !dId || fromCode === toCode) return [];
 
-  const targetUrl = `https://www.mtr.com.hk/share/customer/jp/api/HRRoutes/?o=${oId}&d=${dId}&lang=C`;
+  const targetUrl = 'https://www.mtr.com.hk/share/customer/jp/api/HRRoutes/?o=' + oId + '&d=' + dId + '&lang=C';
   let data = null;
 
   const urls = [
-    `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
+    'https://corsproxy.io/?' + encodeURIComponent(targetUrl),
     targetUrl
   ];
   for(const u of urls){
@@ -313,7 +313,7 @@ async function fetchOfficialMtrRoutes(fromCode, toCode){
       totalStops: Math.max(0, stationCodes.length - 1),
       ix: Math.max(0, legs.length - 1),
       journeyTime: route.time,
-      walkingTime: route.walkingTime ?? null,
+      walkingTime: route.walkingTime ?? 0,
       fare: octopusFare,
       firstTrain,
       lastTrain
@@ -325,8 +325,8 @@ function legLabel(leg){
   const ln = MTR_LINES[leg.line]?.name || leg.line;
   const a = MTR_STATIONS[leg.from]?.zh || leg.from;
   const b = MTR_STATIONS[leg.to]?.zh || leg.to;
-  const st = leg.stations ? `（${leg.stations} 站）` : '';
-  return `${lineDot(leg.line)}${ln} ${a} → ${b}${st}`;
+  const st = leg.stations ? '（' + leg.stations + ' 站）' : '';
+  return lineDot(leg.line) + ln + ' ' + a + ' → ' + b + st;
 }
 
 // ===== MTR UI =====
@@ -335,7 +335,7 @@ function saveMtr(){ localStorage.setItem('a9_mtr', JSON.stringify(mtrPresets)); 
 function renderMtr(){
   const box=document.getElementById('mtrPresets');
   if(!mtrPresets.length){
-    box.innerHTML=`<div class="empty-state"><div style="font-size:2.2rem">🚇</div><p>尚未設定港鐵路線</p><button class="btn btn-primary" style="max-width:180px;margin:0 auto" onclick="openSettings()">+ 新增路線</button></div>`;
+    box.innerHTML='<div class="empty-state"><div style="font-size:2.2rem">🚇</div><p>尚未設定港鐵路線</p><button class="btn btn-primary" style="max-width:180px;margin:0 auto" onclick="openSettings()">+ 新增路線</button></div>';
     return;
   }
   box.innerHTML=mtrPresets.map((p,i)=>{
@@ -343,38 +343,44 @@ function renderMtr(){
     const toZh=MTR_STATIONS[p.to]?.zh||p.to;
     const legs=p.legs||[];
     const firstLine=legs[0]?.line;
-    const ix = legs.length>1 ? `轉車 ${legs.length-1} 次` : '直達';
+    const lastLine=legs[legs.length-1]?.line;
+
+    // Row 1 (Header): Origin dot + Origin > Destination dot + Destination
+    const headerTitle = (firstLine ? lineDot(firstLine) : '') + fromZh + ' <span style="color:var(--muted);font-weight:600;margin:0 2px">&gt;</span> ' + (lastLine ? lineDot(lastLine) : '') + toZh;
+
+    // Row 2: Interchange count + Total stops
+    const ix = legs.length>1 ? '轉車 ' + (legs.length-1) + ' 次' : '直達';
     const totalStops = p.totalStops || legs.reduce((s,l)=>s+(l.hops||1),0);
-    const walkNote = (p.walkingTime !== undefined && p.walkingTime !== null && Number(p.walkingTime) > 0)
-      ? `（步行 ${p.walkingTime} 分鐘）`
-      : '';
-    const timeBadge = p.journeyTime ? ` · 約 ${p.journeyTime} 分鐘${walkNote}` : '';
-    const fareStr = p.fare ? `$${parseFloat(p.fare).toFixed(1)}` : '';
+    const row2 = ix + ' · 共 ' + totalStops + ' 站';
+
+    // Row 3: Total time + Walking time + Fare
+    const row3Parts = [];
+    if(p.journeyTime) row3Parts.push('約 ' + p.journeyTime + ' 分鐘');
+    if(p.walkingTime !== undefined && p.walkingTime !== null && Number(p.walkingTime) > 0){
+      row3Parts.push('步行 ' + p.walkingTime + ' 分鐘');
+    }
+    const fareHtml = p.fare ? '<span id="mtr-fare-' + i + '" style="color:#f87171;font-weight:700">$' + parseFloat(p.fare).toFixed(1) + '</span>' : '';
+    const row3 = row3Parts.join(' · ') + (row3Parts.length && fareHtml ? ' · ' : '') + fareHtml;
+
     const trainHours = (p.firstTrain || p.lastTrain)
-      ? `<div class="train-hours">頭班車 ${p.firstTrain||'--:--'} · 尾班車 ${p.lastTrain||'--:--'}</div>`
+      ? '<div class="train-hours">頭班車 ' + (p.firstTrain||'--:--') + ' · 尾班車 ' + (p.lastTrain||'--:--') + '</div>'
       : '';
-    const pathText = legs.map(l=>{
-      const ln=MTR_LINES[l.line]?.name||l.line;
-      const a=MTR_STATIONS[l.from]?.zh||l.from;
-      const b=MTR_STATIONS[l.to]?.zh||l.to;
-      const st=l.stations?`（${l.stations} 站）`:(l.hops?`（${l.hops+1} 站）`:'');
-      return `${lineDot(l.line)}${ln} ${a} → ${b}${st}`;
-    }).join('<br>');
-    return `<div class="preset-card">
-      <div class="preset-header">
-        <div style="flex:1;min-width:0">
-          <div class="preset-route">${firstLine?lineDot(firstLine):''}${fromZh}</div>
-          <div class="preset-dest">往 ${toZh} · ${ix}${timeBadge} · 共 ${totalStops} 站 · <span id="mtr-fare-${i}" style="color:#f87171;font-weight:700">${fareStr}</span></div>
-          ${trainHours}
-          <div class="preset-stop" style="color:var(--muted);font-weight:400;line-height:1.5;margin-top:6px">${pathText}</div>
-        </div>
-        <div style="display:flex;gap:6px">
-          <button class="icon-btn" onclick="loadMtrEta(${i})">↻</button>
-          <button class="icon-btn danger" onclick="removeMtr(${i})">✕</button>
-        </div>
-      </div>
-      <div id="mtr-eta-${i}"><div class="status"><span class="spinner"></span> 載入中…</div></div>
-    </div>`;
+
+    return '<div class="preset-card">' +
+      '<div class="preset-header">' +
+        '<div style="flex:1;min-width:0">' +
+          '<div class="preset-route">' + headerTitle + '</div>' +
+          '<div class="preset-dest">' + row2 + '</div>' +
+          (row3 ? '<div class="preset-stop">' + row3 + '</div>' : '') +
+          trainHours +
+        '</div>' +
+        '<div style="display:flex;gap:6px">' +
+          '<button class="icon-btn" onclick="loadMtrEta(' + i + ')">↻</button>' +
+          '<button class="icon-btn danger" onclick="removeMtr(' + i + ')">✕</button>' +
+        '</div>' +
+      '</div>' +
+      '<div id="mtr-eta-' + i + '"><div class="status"><span class="spinner"></span> 載入中…</div></div>' +
+    '</div>';
   }).join('');
   mtrPresets.forEach((_,i)=>loadMtrEta(i));
 }
@@ -384,11 +390,11 @@ async function loadMtrEta(i){
   const el=document.getElementById('mtr-eta-'+i);
   if(!p||!el) return;
 
-  if(!p.journeyTime || !p.fare || !p.lastTrain || p.walkingTime === undefined){
+  if(!p.journeyTime || p.walkingTime === undefined || !p.fare || !p.lastTrain){
     try{
       const routes = await fetchOfficialMtrRoutes(p.from, p.to);
       if(routes.length){
-        const matched = routes.find(r => JSON.stringify(r.legs) === JSON.stringify(p.legs)) || routes[0];
+        const matched = routes.find(r => JSON.stringify(r.legs.map(l=>l.line)) === JSON.stringify((p.legs||[]).map(l=>l.line))) || routes[0];
         p.journeyTime = matched.journeyTime;
         p.walkingTime = matched.walkingTime;
         p.fare = matched.fare;
@@ -409,16 +415,16 @@ async function loadMtrEta(i){
     const ln=MTR_LINES[leg.line]?.name||leg.line;
     const fromZh=MTR_STATIONS[leg.from]?.zh||leg.from;
     const toZh=MTR_STATIONS[leg.to]?.zh||leg.to;
-    const stCount=leg.stations?`（${leg.stations} 站）`:'';
-    html += `<div class="leg-block"><div class="leg-title">${lineDot(leg.line)}${ln} · ${fromZh} → ${toZh}${stCount}</div>`;
+    const stCount=leg.stations?'（'+leg.stations+' 站）':'';
+    html += '<div class="leg-block"><div class="leg-title">' + lineDot(leg.line) + ln + ' · ' + fromZh + ' → ' + toZh + stCount + '</div>';
     try{
-      const res=await fetch(`https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=${leg.line}&sta=${leg.from}`);
+      const res=await fetch('https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=' + leg.line + '&sta=' + leg.from);
       const json=await res.json();
       const key=leg.line+'-'+leg.from;
       const data=json.data&&json.data[key];
       const trains=(data && data[leg.dir]) || [];
       if(!trains.length){
-        html += `<div class="status" style="padding:8px">暫無此方向班次</div>`;
+        html += '<div class="status" style="padding:8px">暫無此方向班次</div>';
       } else {
         html += trains.slice(0,3).map(t=>{
           const mins=parseInt(t.ttnt,10);
@@ -428,11 +434,11 @@ async function loadMtrEta(i){
           else if(mins<=15){timeStr=mins+' 分鐘';cls='mid';}
           else{timeStr=mins+' 分鐘';cls='late';}
           const dest=MTR_STATIONS[t.dest]?.zh||t.dest;
-          return `<div class="eta-row"><div class="eta-meta">往 ${dest} · 月台 ${t.plat||'-'}</div><div class="eta-time ${cls}">${timeStr}</div></div>`;
+          return '<div class="eta-row"><div class="eta-meta">往 ' + dest + ' · 月台 ' + (t.plat||'-') + '</div><div class="eta-time ' + cls + '">' + timeStr + '</div></div>';
         }).join('');
       }
-    }catch(e){ html += `<div class="status" style="padding:8px">載入失敗</div>`; }
-    html += `</div>`;
+    }catch(e){ html += '<div class="status" style="padding:8px">載入失敗</div>'; }
+    html += '</div>';
   }
   el.innerHTML = html || '<div class="status">無資料</div>';
 }
@@ -456,14 +462,14 @@ function openSettings(){
 function closeSettings(){ document.getElementById('settingsModal').classList.add('hidden'); }
 
 function openKmbSettings(){
-  document.getElementById('modalBody').innerHTML=`<label>1. 輸入路線號碼</label><div style="display:flex;gap:8px"><input type="text" id="cfgRoute" placeholder="例如 49X" style="flex:1"/><button class="btn btn-primary" style="flex:0 0 auto;padding:10px 14px" onclick="fetchKmbDirections()">Fetch</button></div><div class="search-hint" id="cfgHint"></div><div id="cfgDirSection" class="hidden" style="margin-top:14px"><label>2. 選擇方向</label><div id="cfgDirList" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"></div></div><div id="cfgStopSection" class="hidden" style="margin-top:14px"><label>3. 選擇車站</label><select id="cfgStop"></select></div>`;
+  document.getElementById('modalBody').innerHTML='<label>1. 輸入路線號碼</label><div style="display:flex;gap:8px"><input type="text" id="cfgRoute" placeholder="例如 49X" style="flex:1"/><button class="btn btn-primary" style="flex:0 0 auto;padding:10px 14px" onclick="fetchKmbDirections()">Fetch</button></div><div class="search-hint" id="cfgHint"></div><div id="cfgDirSection" class="hidden" style="margin-top:14px"><label>2. 選擇方向</label><div id="cfgDirList" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"></div></div><div id="cfgStopSection" class="hidden" style="margin-top:14px"><label>3. 選擇車站</label><select id="cfgStop"></select></div>';
   document.getElementById('cfgRoute').onkeydown=e=>{if(e.key==='Enter')fetchKmbDirections();};
   renderCfgListKmb();
 }
 function renderCfgListKmb(){
   const el=document.getElementById('cfgList');
   if(!kmbPresets.length){el.innerHTML='<div style="color:var(--muted);font-size:.85rem">（無）</div>';return;}
-  el.innerHTML=kmbPresets.map((p,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #2a2a3a;font-size:.9rem"><span><strong style="color:var(--accent)">${p.route}</strong> · ${p.stopName}</span><button class="icon-btn danger" style="width:28px;height:28px" onclick="removeKmb(${i});openSettings()">✕</button></div>`).join('');
+  el.innerHTML=kmbPresets.map((p,i)=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #2a2a3a;font-size:.9rem"><span><strong style="color:var(--accent)">'+p.route+'</strong> · '+p.stopName+'</span><button class="icon-btn danger" style="width:28px;height:28px" onclick="removeKmb('+i+');openSettings()">✕</button></div>').join('');
 }
 async function fetchKmbDirections(){
   const route=document.getElementById('cfgRoute').value.trim().toUpperCase();
@@ -476,11 +482,11 @@ async function fetchKmbDirections(){
   try{
     const matches=(await (await fetch('https://data.etabus.gov.hk/v1/transport/kmb/route/')).json()).data.filter(r=>r.route===route);
     if(!matches.length){hint.textContent='找不到此路線';return;}
-    hint.textContent=`找到 ${matches.length} 個方向`;
+    hint.textContent='找到 ' + matches.length + ' 個方向';
     document.getElementById('cfgDirList').innerHTML=matches.map(m=>{
       const o=m.orig_tc||m.orig_en,d=m.dest_tc||m.dest_en;
       const bound=m.bound==='O'?'去程':'回程';
-      return `<button class="btn btn-secondary" style="text-align:left;padding:12px 14px" onclick='selectKmbDir(${JSON.stringify(m).replace(/'/g,"&#39;")})'><div style="font-weight:700">${bound}</div><div style="font-size:.9rem">${o} → ${d}</div></button>`;
+      return '<button class="btn btn-secondary" style="text-align:left;padding:12px 14px" onclick='selectKmbDir(' + JSON.stringify(m).replace(/'/g,"&#39;") + ')'><div style="font-weight:700">' + bound + '</div><div style="font-size:.9rem">' + o + ' → ' + d + '</div></button>';
     }).join('');
     document.getElementById('cfgDirSection').classList.remove('hidden');
   }catch(e){hint.textContent='Error: '+e.message;}
@@ -494,27 +500,27 @@ async function selectKmbDir(meta){
   try{
     if(!stopMap){ const j=await (await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop')).json(); stopMap={}; j.data.forEach(s=>stopMap[s.stop]=s); }
     const dir=meta.bound==='O'?'outbound':'inbound';
-    const stops=(await (await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${meta.route}/${dir}/${meta.service_type}`)).json()).data||[];
+    const stops=(await (await fetch('https://data.etabus.gov.hk/v1/transport/kmb/route-stop/' + meta.route + '/' + dir + '/' + meta.service_type)).json()).data||[];
     document.getElementById('cfgStop').innerHTML=stops.map((s,i)=>{
       const name=(stopMap[s.stop]||{}).name_tc||s.stop;
-      return `<option value="${s.stop}" data-name="${name.replace(/"/g,'&quot;')}">${i+1}. ${name}</option>`;
+      return '<option value="' + s.stop + '" data-name="' + name.replace(/"/g,'&quot;') + '">' + (i+1) + '. ' + name + '</option>';
     }).join('');
     document.getElementById('cfgStopSection').classList.remove('hidden');
     document.getElementById('saveBtn').disabled=false;
-    hint.textContent=`${stops.length} 個車站`;
+    hint.textContent=stops.length + ' 個車站';
   }catch(e){hint.textContent='Error: '+e.message;}
 }
 
 function openMtrSettings(){
-  const lineOpts=Object.keys(MTR_LINES).map(lc=>`<option value="${lc}">${MTR_LINES[lc].name}</option>`).join('');
-  document.getElementById('modalBody').innerHTML=`
-    <label>出發站</label>
-    <div class="mtr-row"><select id="cfgFromLine" onchange="cfgFillSta('from')">${lineOpts}</select><select id="cfgFromSta"></select></div>
-    <label>到達站</label>
-    <div class="mtr-row"><select id="cfgToLine" onchange="cfgFillSta('to')">${lineOpts}</select><select id="cfgToSta"></select></div>
-    <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="calcMtrPaths()">查詢官方路線</button>
-    <div class="search-hint" id="cfgHint"></div>
-    <div id="cfgPathList" style="margin-top:12px"></div>`;
+  const lineOpts=Object.keys(MTR_LINES).map(lc=>'<option value="'+lc+'">'+MTR_LINES[lc].name+'</option>').join('');
+  document.getElementById('modalBody').innerHTML=
+    '<label>出發站</label>' +
+    '<div class="mtr-row"><select id="cfgFromLine" onchange="cfgFillSta('from')">' + lineOpts + '</select><select id="cfgFromSta"></select></div>' +
+    '<label>到達站</label>' +
+    '<div class="mtr-row"><select id="cfgToLine" onchange="cfgFillSta('to')">' + lineOpts + '</select><select id="cfgToSta"></select></div>' +
+    '<button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="calcMtrPaths()">查詢官方路線</button>' +
+    '<div class="search-hint" id="cfgHint"></div>' +
+    '<div id="cfgPathList" style="margin-top:12px"></div>';
   document.getElementById('cfgFromLine').value='TML';
   document.getElementById('cfgToLine').value='EAL';
   cfgFillSta('from'); cfgFillSta('to');
@@ -528,7 +534,7 @@ function cfgFillSta(which){
   const lineEl=document.getElementById(which==='from'?'cfgFromLine':'cfgToLine');
   const staEl=document.getElementById(which==='from'?'cfgFromSta':'cfgToSta');
   const sts=MTR_LINES[lineEl.value]?.stations||[];
-  staEl.innerHTML=sts.map(s=>`<option value="${s.c}">${s.zh}</option>`).join('');
+  staEl.innerHTML=sts.map(s=>'<option value="'+s.c+'">'+s.zh+'</option>').join('');
 }
 async function calcMtrPaths(){
   const from=document.getElementById('cfgFromSta').value;
@@ -543,21 +549,19 @@ async function calcMtrPaths(){
   try{
     const paths=await fetchOfficialMtrRoutes(from, to);
     if(!paths.length){ hint.textContent='找不到路線'; return; }
-    const trainNote = (paths[0].firstTrain && paths[0].lastTrain) ? `（頭班 ${paths[0].firstTrain} · 尾班 ${paths[0].lastTrain}）` : '';
-    hint.textContent=`找到 ${paths.length} 條官方建議路線${trainNote}`;
+    const trainNote = (paths[0].firstTrain && paths[0].lastTrain) ? '（頭班 ' + paths[0].firstTrain + ' · 尾班 ' + paths[0].lastTrain + '）' : '';
+    hint.textContent='找到 ' + paths.length + ' 條官方建議路線' + trainNote;
     list.innerHTML=paths.map((p,idx)=>{
       const ix=p.legs.length-1;
       const summary=p.legs.map(legLabel).join('<br>');
-      const badge=ix===0?'直達':`轉車 ${ix} 次`;
-      const walkNote = (p.walkingTime !== undefined && p.walkingTime !== null && Number(p.walkingTime) > 0)
-        ? `（步行 ${p.walkingTime} 分鐘）`
-        : '';
-      const timeStr=p.journeyTime?` · 約 ${p.journeyTime} 分鐘${walkNote}`:'';
-      const fareStr=p.fare?` · $${parseFloat(p.fare).toFixed(1)}`:'';
-      return `<button class="path-option" id="pathOpt${idx}" onclick="selectPath(${idx})">
-        <div style="font-weight:700;margin-bottom:4px">${badge}${timeStr} · 共 ${p.totalStops} 站<span style="color:#f87171">${fareStr}</span></div>
-        <div style="font-size:.85rem;color:var(--muted);line-height:1.55">${summary}</div>
-      </button>`;
+      const badge=ix===0?'直達':'轉車 ' + ix + ' 次';
+      const walkStr=(p.walkingTime !== undefined && p.walkingTime !== null && Number(p.walkingTime) > 0) ? '（步行 ' + p.walkingTime + ' 分鐘）' : '';
+      const timeStr=p.journeyTime?' · 約 ' + p.journeyTime + ' 分鐘' + walkStr:'';
+      const fareStr=p.fare?' · $' + parseFloat(p.fare).toFixed(1):'';
+      return '<button class="path-option" id="pathOpt' + idx + '" onclick="selectPath(' + idx + ')">' +
+        '<div style="font-weight:700;margin-bottom:4px">' + badge + timeStr + ' · 共 ' + p.totalStops + ' 站<span style="color:#f87171">' + fareStr + '</span></div>' +
+        '<div style="font-size:.85rem;color:var(--muted);line-height:1.55">' + summary + '</div>' +
+      '</button>';
     }).join('');
     window._pathOptions=paths;
   }catch(e){
@@ -574,7 +578,7 @@ function renderCfgListMtr(){
   if(!mtrPresets.length){el.innerHTML='<div style="color:var(--muted);font-size:.85rem">（無）</div>';return;}
   el.innerHTML=mtrPresets.map((p,i)=>{
     const a=MTR_STATIONS[p.from]?.zh||p.from, b=MTR_STATIONS[p.to]?.zh||p.to;
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #2a2a3a;font-size:.9rem"><span><strong style="color:var(--accent)">${a}</strong> → ${b}</span><button class="icon-btn danger" style="width:28px;height:28px" onclick="removeMtr(${i});openSettings()">✕</button></div>`;
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #2a2a3a;font-size:.9rem"><span><strong style="color:var(--accent)">' + a + '</strong> → ' + b + '</span><button class="icon-btn danger" style="width:28px;height:28px" onclick="removeMtr(' + i + ');openSettings()">✕</button></div>';
   }).join('');
 }
 
