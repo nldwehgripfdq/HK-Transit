@@ -238,12 +238,64 @@ const MTR_NET = {"lines":{"AEL":{"name":"機場快綫","stations":[{"c":"HOK","z
 
     function findMtrPaths(start, end, maxPaths=5){
       if(start===end) return [];
+      const results = [];
+      const sigs = new Set();
+
+      function legsOf(path, lines){
+        const legs=[]; let i=0;
+        while(i<lines.length){
+          let j=i; while(j<lines.length && lines[j]===lines[i]) j++;
+          legs.push({line:lines[i], from:path[i], to:path[j], hops:j-i, stations:j-i+1});
+          i=j;
+        }
+        legs.forEach(leg=>{
+          const pa=MTR_LINE_POS[leg.line]?.[leg.from] ?? 0;
+          const pb=MTR_LINE_POS[leg.line]?.[leg.to] ?? 0;
+          leg.dir = pb > pa ? 'UP' : 'DOWN';
+        });
+        return legs;
+      }
+      function addPath(path, lines){
+        const legs = legsOf(path, lines);
+        const sig = legs.map(l=>l.line+':'+l.from+'>'+l.to).join('|');
+        if(sigs.has(sig)) return;
+        sigs.add(sig);
+        results.push({path, lines, legs, totalStops: path.length-1, ix: legs.length-1});
+      }
+
+      // 1) Always add direct same-line paths first (all lines that contain both stations)
+      Object.keys(MTR_LINE_POS).forEach(lc => {
+        const pos = MTR_LINE_POS[lc];
+        if(pos[start]===undefined || pos[end]===undefined) return;
+        // rebuild ordered codes for this line
+        const codes = Object.keys(pos).sort((a,b)=>pos[a]-pos[b]);
+        const i = pos[start], j = pos[end];
+        let path;
+        if(i <= j) path = codes.filter(c => pos[c] >= i && pos[c] <= j);
+        else path = codes.filter(c => pos[c] >= j && pos[c] <= i).reverse();
+        if(path.length < 2 || path[0]!==start || path[path.length-1]!==end){
+          // fallback walk
+          path = [];
+          const step = i <= j ? 1 : -1;
+          for(let k=i; ; k+=step){
+            const c = codes.find(x => pos[x]===k);
+            if(c) path.push(c);
+            if(k===j) break;
+          }
+        }
+        if(path.length >= 2){
+          const lines = Array(path.length-1).fill(lc);
+          addPath(path, lines);
+        }
+      });
+
+      // 2) BFS for interchange paths
       const q = [[start, [start], []]];
-      const found = [];
       const seen = new Set([start+'|']);
-      while(q.length && found.length < 50){
+      const found = [];
+      while(q.length && found.length < 40){
         const [cur, path, lines] = q.shift();
-        if(path.length > 16) continue;
+        if(path.length > 30) continue; // allow full long lines
         if(cur===end && path.length>1){ found.push({path:path.slice(), lines:lines.slice()}); continue; }
         for(const e of (MTR_GRAPH[cur]||[])){
           if(path.includes(e.to)) continue;
@@ -253,53 +305,31 @@ const MTR_NET = {"lines":{"AEL":{"name":"機場快綫","stations":[{"c":"HOK","z
           q.push([e.to, path.concat(e.to), lines.concat(e.line)]);
         }
       }
-      function legsOf(path, lines){
-        const legs=[]; let i=0;
-        while(i<lines.length){
-          let j=i; while(j<lines.length && lines[j]===lines[i]) j++;
-          const from=path[i], to=path[j];
-          const stops = j - i; // number of hops = stations in between + 1 hop count
-          const stationCount = j - i + 1; // stations on this leg including both ends? 
-          // hops = j-i, stations along leg including start of leg = j-i+1
-          legs.push({line:lines[i], from, to, hops: j-i, stations: j-i+1});
-          i=j;
-        }
-        return legs;
-      }
       found.sort((a,b)=>{
-        const la=legsOf(a.path,a.lines), lb=legsOf(b.path,b.lines);
-        const ia=la.length-1, ib=lb.length-1;
+        const ia = legsOf(a.path,a.lines).length-1;
+        const ib = legsOf(b.path,b.lines).length-1;
         if(ia!==ib) return ia-ib;
-        return a.path.length-b.path.length;
+        return a.path.length - b.path.length;
       });
-      const uniq=[], sigs=new Set();
-      let bestHops = Infinity;
       for(const f of found){
-        const legs=legsOf(f.path,f.lines);
-        const hops=f.path.length-1;
-        const ix=legs.length-1;
-        // skip dominated: more interchanges AND more hops than best so far is already sorted
-        // drop paths that are much longer than the shortest (e.g. > 2x hops or > shortest+8)
-        if(uniq.length){
-          const best = uniq[0];
-          const bestIx = best.legs.length-1;
-          const bestH = best.path.length-1;
-          if(ix > bestIx + 1) continue;
-          if(hops > bestH + 6) continue;
-          if(ix === bestIx && hops > bestH + 3) continue;
-        }
-        const sig=legs.map(l=>l.line+':'+l.from+'>'+l.to).join('|');
-        if(sigs.has(sig)) continue;
-        sigs.add(sig);
-        legs.forEach(leg=>{
-          const pa=MTR_LINE_POS[leg.line]?.[leg.from] ?? 0;
-          const pb=MTR_LINE_POS[leg.line]?.[leg.to] ?? 0;
-          leg.dir = pb > pa ? 'UP' : 'DOWN';
-        });
-        uniq.push({path:f.path, lines:f.lines, legs, totalStops: hops});
-        if(uniq.length>=maxPaths) break;
+        addPath(f.path, f.lines);
+        if(results.length >= maxPaths + 3) break;
       }
-      return uniq;
+
+      // Rank: 0 interchange first, then fewer stops, then fewer interchanges
+      results.sort((a,b)=>{
+        if(a.ix !== b.ix) return a.ix - b.ix;
+        return a.totalStops - b.totalStops;
+      });
+      // Drop clearly worse than best
+      const best = results[0];
+      const filtered = results.filter(r=>{
+        if(!best) return true;
+        if(r.ix > best.ix + 1) return false;
+        if(r.ix === best.ix && r.totalStops > best.totalStops + 8) return false;
+        return true;
+      });
+      return filtered.slice(0, maxPaths);
     }
 
     function legLabel(leg){
