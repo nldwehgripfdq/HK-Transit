@@ -42,7 +42,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 20px;
+      padding: 12px 16px;
       background: var(--card);
       border-bottom: 1px solid #2a2a3a;
       position: sticky;
@@ -50,14 +50,14 @@
       z-index: 100;
     }
     header h1 {
-      font-size: 1.2rem;
+      font-size: 1.15rem;
       font-weight: 700;
       display: flex;
       align-items: center;
       gap: 8px;
     }
     .header-actions { display: flex; gap: 8px; align-items: center; }
-    .lang-toggle, .settings-btn {
+    .settings-btn {
       background: var(--card-hover);
       border: 1px solid #333;
       color: var(--text);
@@ -67,7 +67,36 @@
       cursor: pointer;
       transition: all 0.2s;
     }
-    .lang-toggle:hover, .settings-btn:hover { border-color: var(--accent); }
+    .settings-btn:hover { border-color: var(--accent); }
+
+    /* Mobile tabs */
+    .mobile-tabs {
+      display: none;
+      background: var(--card);
+      border-bottom: 1px solid #2a2a3a;
+      padding: 6px 12px;
+      gap: 6px;
+      position: sticky;
+      top: 53px;
+      z-index: 90;
+    }
+    .mobile-tab {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      transition: all 0.2s;
+    }
+    .mobile-tab.active {
+      background: linear-gradient(135deg, #4cc9f0, #4895ef);
+      color: #0f0f1a;
+    }
 
     /* ===== SPLIT LAYOUT ===== */
     .main {
@@ -78,6 +107,13 @@
     }
     @media (max-width: 900px) {
       .main { grid-template-columns: 1fr; }
+      .mobile-tabs { display: flex; }
+      .panel-weather { display: none; }
+      .panel-bus { display: block; }
+      .main.tab-weather .panel-weather { display: block; }
+      .main.tab-weather .panel-bus { display: none; }
+      .main.tab-bus .panel-bus { display: block; }
+      .main.tab-bus .panel-weather { display: none; }
     }
 
     .panel {
@@ -372,12 +408,16 @@
   <header>
     <h1>🚌 HK Transit</h1>
     <div class="header-actions">
-      <button class="lang-toggle" id="langBtn" onclick="toggleLang()">繁</button>
       <button class="settings-btn" onclick="openSettings()">⚙️ 設定路線</button>
     </div>
   </header>
 
-  <div class="main">
+  <div class="mobile-tabs">
+    <button class="mobile-tab active" id="tabBus" onclick="switchMobileTab('bus')">🚌 九巴</button>
+    <button class="mobile-tab" id="tabWeather" onclick="switchMobileTab('weather')">🌤 天氣</button>
+  </div>
+
+  <div class="main tab-bus" id="mainContainer">
     <!-- LEFT: WEATHER -->
     <div class="panel panel-weather">
       <div class="panel-title">
@@ -454,44 +494,29 @@
 
   <script>
     // ========== STATE ==========
-    let lang = localStorage.getItem('hk_lang') || 'tc';
     let weatherData = null;
     let presets = JSON.parse(localStorage.getItem('hk_presets') || '[]');
-    let stopMap = null;          // cached full stop list
-    let etaTimers = {};
-    let configStops = [];        // temporary stops while configuring
+    let stopMap = null;
+    let configStops = [];
+    let mobileTab = 'bus'; // default to KMB on mobile
 
-    // ========== i18n ==========
-    const i18n = {
-      weather: { tc: '天文台九天預報', en: 'HKO 9-Day Forecast' },
-      myBuses: { tc: '我的巴士', en: 'My Buses' },
-      noPresets: { tc: '尚未設定任何巴士站', en: 'No bus stops configured yet' },
-      addRoute: { tc: '新增 / 編輯路線', en: 'Add / Edit Route' },
-      routeNum: { tc: '路線號碼', en: 'Route Number' },
-      direction: { tc: '方向', en: 'Direction' },
-      serviceType: { tc: '服務類型 (通常為 1)', en: 'Service Type (usually 1)' },
-      selectStop: { tc: '選擇車站', en: 'Select Stop' },
-      currentPresets: { tc: '目前已儲存的路線：', en: 'Currently saved routes:' },
-      mins: { tc: '分鐘', en: 'min' },
-      arriving: { tc: '即將到達', en: 'Arriving' },
-      today: { tc: '今日', en: 'Today' },
-      noEta: { tc: '暫無到站資料', en: 'No ETA' },
-    };
-    function t(k) { return i18n[k] ? i18n[k][lang] : k; }
-
-    function applyI18n() {
-      document.querySelectorAll('[data-i18n]').forEach(el => {
-        el.textContent = t(el.getAttribute('data-i18n'));
-      });
-      document.getElementById('langBtn').textContent = lang === 'tc' ? 'EN' : '繁';
+    function t(k) {
+      const map = {
+        noPresets: '尚未設定任何巴士站',
+        mins: '分鐘',
+        arriving: '即將到達',
+        noEta: '暫無到站資料',
+      };
+      return map[k] || k;
     }
 
-    function toggleLang() {
-      lang = lang === 'tc' ? 'en' : 'tc';
-      localStorage.setItem('hk_lang', lang);
-      applyI18n();
-      if (weatherData) renderWeather(weatherData);
-      renderAllPresets();
+    function switchMobileTab(tab) {
+      mobileTab = tab;
+      const main = document.getElementById('mainContainer');
+      main.classList.remove('tab-bus', 'tab-weather');
+      main.classList.add('tab-' + tab);
+      document.getElementById('tabBus').classList.toggle('active', tab === 'bus');
+      document.getElementById('tabWeather').classList.toggle('active', tab === 'weather');
     }
 
     // ========== WEATHER ==========
@@ -506,7 +531,7 @@
 
     async function loadWeather() {
       try {
-        const res = await fetch(`https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=${lang==='tc'?'tc':'en'}`);
+        const res = await fetch(`https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc`);
         weatherData = await res.json();
         renderWeather(weatherData);
       } catch (e) {
@@ -517,30 +542,48 @@
     function renderWeather(data) {
       document.getElementById('generalSituation').textContent = data.generalSituation || '';
       const list = document.getElementById('forecastList');
-      const todayStr = new Date().toISOString().slice(0,10).replace(/-/g,'');
 
-      list.innerHTML = data.weatherForecast.map((d, i) => {
-        const isToday = d.forecastDate === todayStr || i === 0;
-        const icon = iconMap[d.ForecastIcon] || '🌤';
-        const dateStr = d.forecastDate.slice(4,6) + '/' + d.forecastDate.slice(6);
+      // Get today's date in Hong Kong time (UTC+8)
+      const nowHK = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Hong_Kong' }));
+      const y = nowHK.getFullYear();
+      const m = String(nowHK.getMonth() + 1).padStart(2, '0');
+      const d = String(nowHK.getDate()).padStart(2, '0');
+      const todayStr = `${y}${m}${d}`;
+
+      list.innerHTML = data.weatherForecast.map((day, i) => {
+        const isToday = day.forecastDate === todayStr || i === 0;
+        const icon = iconMap[day.ForecastIcon] || '🌤';
+        const dateStr = day.forecastDate.slice(4,6) + '/' + day.forecastDate.slice(6);
         return `
           <div class="day-row ${isToday ? 'today' : ''}">
             <div>
-              <div class="day-name">${isToday ? t('today') : d.week}</div>
+              <div class="day-name">${isToday ? '今日' : day.week}</div>
               <div class="day-date">${dateStr}</div>
             </div>
             <div class="weather-icon">${icon}</div>
             <div>
-              <div class="temps">${d.forecastMaxtemp.value}° <span>/ ${d.forecastMintemp.value}°</span></div>
-              <div class="weather-desc">${d.forecastWeather}</div>
+              <div class="temps">${day.forecastMaxtemp.value}° <span>/ ${day.forecastMintemp.value}°</span></div>
+              <div class="weather-desc">${day.forecastWeather}</div>
             </div>
-            <div class="psr-badge">PSR ${d.PSR}</div>
+            <div class="psr-badge">PSR ${day.PSR}</div>
           </div>`;
       }).join('');
 
-      const ut = new Date(data.updateTime);
-      document.getElementById('weatherUpdate').textContent =
-        ut.toLocaleTimeString(lang==='tc'?'zh-HK':'en-HK', {hour:'2-digit',minute:'2-digit'});
+      // Show update time in Hong Kong timezone
+      try {
+        const ut = new Date(data.updateTime);
+        const timeStr = ut.toLocaleString('zh-HK', {
+          timeZone: 'Asia/Hong_Kong',
+          month: 'numeric',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
+        document.getElementById('weatherUpdate').textContent = '更新 ' + timeStr;
+      } catch (e) {
+        document.getElementById('weatherUpdate').textContent = '';
+      }
     }
 
     // ========== PRESETS ==========
@@ -564,12 +607,10 @@
       }
 
       container.innerHTML = presets.map((p, idx) => {
-        const orig = lang === 'tc' ? (p.orig_tc || '') : (p.orig_en || '');
-        const dest = lang === 'tc' ? (p.dest_tc || '') : (p.dest_en || '');
+        const orig = p.orig_tc || p.orig_en || '';
+        const dest = p.dest_tc || p.dest_en || '';
         const directionText = orig && dest ? `${orig} → ${dest}` : (dest || '');
-        const boundLabel = p.bound === 'O'
-          ? (lang === 'tc' ? '去程' : 'Outbound')
-          : (lang === 'tc' ? '回程' : 'Inbound');
+        const boundLabel = p.bound === 'O' ? '去程' : '回程';
 
         return `
         <div class="preset-card" id="preset-${idx}">
@@ -639,8 +680,8 @@
         else if (mins <= 15) { timeStr = mins + ' ' + t('mins'); cls = 'mid'; }
         else { timeStr = mins + ' ' + t('mins'); cls = 'late'; }
 
-        const dest = lang==='tc' ? e.dest_tc : e.dest_en;
-        const rmk = lang==='tc' ? (e.rmk_tc||'') : (e.rmk_en||'');
+        const dest = e.dest_tc || e.dest_en || '';
+        const rmk = e.rmk_tc || e.rmk_en || '';
 
         return `
           <div class="eta-row">
@@ -656,7 +697,7 @@
     }
 
     function removePreset(idx) {
-      if (!confirm(lang==='tc' ? '刪除此路線？' : 'Remove this route?')) return;
+      if (!confirm('刪除此路線？')) return;
       presets.splice(idx, 1);
       savePresetsToStorage();
       renderAllPresets();
@@ -720,11 +761,11 @@
       window._selectedMeta = null;
 
       if (!route) {
-        hint.textContent = lang === 'tc' ? '請輸入路線號碼' : 'Please enter a route number';
+        hint.textContent = '請輸入路線號碼';
         return;
       }
 
-      hint.innerHTML = `<span class="spinner"></span> ${lang==='tc'?'搜尋中…':'Searching…'}`;
+      hint.innerHTML = `<span class="spinner"></span> 搜尋中…`;
 
       try {
         const rRes = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/route/');
@@ -732,19 +773,17 @@
         const matches = rJson.data.filter(r => r.route === route);
 
         if (matches.length === 0) {
-          hint.textContent = lang === 'tc' ? '找不到此路線' : 'Route not found';
+          hint.textContent = '找不到此路線';
           return;
         }
 
-        hint.textContent = `${matches.length} ${lang==='tc'?'個方向/班次':'direction(s) found'}`;
+        hint.textContent = `找到 ${matches.length} 個方向/班次`;
 
-        dirList.innerHTML = matches.map((m, i) => {
-          const o = lang === 'tc' ? m.orig_tc : m.orig_en;
-          const d = lang === 'tc' ? m.dest_tc : m.dest_en;
-          const boundLabel = m.bound === 'O'
-            ? (lang === 'tc' ? '去程' : 'Outbound')
-            : (lang === 'tc' ? '回程' : 'Inbound');
-          const svcNote = m.service_type !== '1' && m.service_type !== 1
+        dirList.innerHTML = matches.map((m) => {
+          const o = m.orig_tc || m.orig_en;
+          const d = m.dest_tc || m.dest_en;
+          const boundLabel = m.bound === 'O' ? '去程' : '回程';
+          const svcNote = (m.service_type !== '1' && m.service_type !== 1)
             ? ` <span style="color:var(--warning)">(特別班次 type ${m.service_type})</span>`
             : '';
 
@@ -768,14 +807,7 @@
       const sel = document.getElementById('cfgStop');
       const hint = document.getElementById('cfgHint');
 
-      // highlight selected button
-      document.querySelectorAll('#cfgDirectionList button').forEach(btn => {
-        btn.style.borderColor = '#444';
-        btn.style.background = 'transparent';
-      });
-      // (simple visual feedback handled by click)
-
-      hint.innerHTML = `<span class="spinner"></span> ${lang==='tc'?'載入車站…':'Loading stops…'}`;
+      hint.innerHTML = `<span class="spinner"></span> 載入車站…`;
       stopSection.classList.add('hidden');
       document.getElementById('savePresetBtn').disabled = true;
 
@@ -787,19 +819,19 @@
         configStops = json.data || [];
 
         if (configStops.length === 0) {
-          hint.textContent = lang === 'tc' ? '此方向沒有車站資料' : 'No stops for this direction';
+          hint.textContent = '此方向沒有車站資料';
           return;
         }
 
         sel.innerHTML = configStops.map((s, i) => {
           const info = stopMap[s.stop] || {};
-          const name = lang === 'tc' ? (info.name_tc || s.stop) : (info.name_en || s.stop);
+          const name = info.name_tc || info.name_en || s.stop;
           return `<option value="${s.stop}" data-name="${name.replace(/"/g,'&quot;')}">${i+1}. ${name}</option>`;
         }).join('');
 
         stopSection.classList.remove('hidden');
         document.getElementById('savePresetBtn').disabled = false;
-        hint.textContent = `${configStops.length} ${lang==='tc'?'個車站':'stops'} — 請選擇你的上車站`;
+        hint.textContent = `${configStops.length} 個車站 — 請選擇你的上車站`;
       } catch (e) {
         hint.textContent = 'Error: ' + e.message;
       }
@@ -834,7 +866,7 @@
         String(p.service_type) === preset.service_type
       );
       if (exists) {
-        alert(lang === 'tc' ? '此組合已存在' : 'This combination already exists');
+        alert('此組合已存在');
         return;
       }
 
@@ -845,12 +877,14 @@
     }
 
     // ========== INIT ==========
-    applyI18n();
     loadWeather();
     renderAllPresets();
 
-    // Auto refresh all ETAs every 45 seconds
-    setInterval(refreshAllEtas, 45000);
+    // Auto-refresh bus ETAs every 30 seconds
+    setInterval(refreshAllEtas, 30000);
+
+    // Auto-refresh weather every 30 minutes
+    setInterval(loadWeather, 30 * 60 * 1000);
 
     // Close modal on overlay click
     document.getElementById('settingsModal').addEventListener('click', e => {
