@@ -294,7 +294,7 @@ const MTR_NET = {"lines":{"AEL":{"name":"機場快綫","stations":[{"c":"HOK","z
         legs.forEach(leg=>{
           const pa=MTR_LINE_POS[leg.line]?.[leg.from] ?? 0;
           const pb=MTR_LINE_POS[leg.line]?.[leg.to] ?? 0;
-          leg.dir = pb < pa ? 'UP' : 'DOWN';
+          leg.dir = pb > pa ? 'UP' : 'DOWN';
         });
         uniq.push({path:f.path, lines:f.lines, legs, totalStops: hops});
         if(uniq.length>=maxPaths) break;
@@ -355,32 +355,40 @@ const MTR_NET = {"lines":{"AEL":{"name":"機場快綫","stations":[{"c":"HOK","z
     async function ensureFareMap(){
       if(fareMap && Object.keys(fareMap).length > 100) return fareMap;
       try{
-        const c=localStorage.getItem('a9_mtr_fares_v2');
+        const c=localStorage.getItem('a9_mtr_fares_v3');
         if(c){ const p=JSON.parse(c); if(p && Object.keys(p).length>100){ fareMap=p; return fareMap; } }
       }catch(e){}
-      const text=await (await fetch('https://opendata.mtr.com.hk/data/mtr_lines_fares.csv')).text();
-      fareMap={};
-      const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/);
-      for(let i=1;i<lines.length;i++){
-        const line=lines[i];
-        if(!line.trim()) continue;
-        const cols=[]; let cur='', q=false;
-        for(let j=0;j<line.length;j++){
-          const ch=line[j];
-          if(ch==='"'){ q=!q; continue; }
-          if(ch===',' && !q){ cols.push(cur.trim()); cur=''; continue; }
-          cur+=ch;
+      // same-origin fares.json (upload next to index.html on GitHub)
+      try{
+        const res = await fetch('fares.json');
+        if(res.ok){
+          fareMap = await res.json();
+          try{ localStorage.setItem('a9_mtr_fares_v3', JSON.stringify(fareMap)); }catch(e){}
+          return fareMap;
         }
-        cols.push(cur.trim());
-        if(cols.length>=5){
-          const sid=cols[1], did=cols[3], fare=cols[4];
-          if(sid && did && fare){
-            fareMap[sid+'-'+did]=fare;
-            if(!fareMap[did+'-'+sid]) fareMap[did+'-'+sid]=fare;
+      }catch(e){}
+      // fallback: try official CSV (may fail CORS on some hosts)
+      try{
+        const text=await (await fetch('https://opendata.mtr.com.hk/data/mtr_lines_fares.csv')).text();
+        fareMap={};
+        const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/);
+        for(let i=1;i<lines.length;i++){
+          const line=lines[i]; if(!line.trim()) continue;
+          const cols=[]; let cur='', q=false;
+          for(let j=0;j<line.length;j++){
+            const ch=line[j];
+            if(ch==='"'){ q=!q; continue; }
+            if(ch===',' && !q){ cols.push(cur.trim()); cur=''; continue; }
+            cur+=ch;
+          }
+          cols.push(cur.trim());
+          if(cols.length>=5){
+            const sid=cols[1], did=cols[3], fare=cols[4];
+            if(sid&&did&&fare){ fareMap[sid+'-'+did]=fare; }
           }
         }
-      }
-      try{ localStorage.setItem('a9_mtr_fares_v2', JSON.stringify(fareMap)); }catch(e){}
+        try{ localStorage.setItem('a9_mtr_fares_v3', JSON.stringify(fareMap)); }catch(e){}
+      }catch(e){ fareMap = fareMap || {}; }
       return fareMap;
     }
 
@@ -404,6 +412,10 @@ const MTR_NET = {"lines":{"AEL":{"name":"機場快綫","stations":[{"c":"HOK","z
       // each leg schedule
       let html='';
       for(const leg of (p.legs||[])){
+        // recompute direction from line positions (fixes old saves)
+        const pa=MTR_LINE_POS[leg.line]?.[leg.from] ?? 0;
+        const pb=MTR_LINE_POS[leg.line]?.[leg.to] ?? 0;
+        leg.dir = pb > pa ? 'UP' : 'DOWN';
         const ln=MTR_LINES[leg.line]?.name||leg.line;
         const fromZh=MTR_STATIONS[leg.from]?.zh||leg.from;
         const toZh=MTR_STATIONS[leg.to]?.zh||leg.to;
@@ -505,7 +517,7 @@ const MTR_NET = {"lines":{"AEL":{"name":"機場快綫","stations":[{"c":"HOK","z
     }
 
     function openMtrSettings(){
-      const lineOpts=Object.keys(MTR_LINES).map(lc=>`<option value="${lc}">● ${MTR_LINES[lc].name}</option>`).join('');
+      const lineOpts=Object.keys(MTR_LINES).map(lc=>`<option value="${lc}">${MTR_LINES[lc].name}</option>`).join('');
       document.getElementById('modalBody').innerHTML=`
         <label>出發站</label>
         <div class="mtr-row"><select id="cfgFromLine" onchange="cfgFillSta('from')">${lineOpts}</select><select id="cfgFromSta"></select></div>
@@ -517,6 +529,13 @@ const MTR_NET = {"lines":{"AEL":{"name":"機場快綫","stations":[{"c":"HOK","z
       document.getElementById('cfgFromLine').value='TML';
       document.getElementById('cfgToLine').value='EAL';
       cfgFillSta('from'); cfgFillSta('to');
+      // colour legend (native <option> cannot show colour)
+      const leg = document.createElement('div');
+      leg.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin-top:10px';
+      leg.innerHTML = Object.keys(MTR_LINES).map(lc => `<span style="display:inline-flex;align-items:center;font-size:.72rem;color:var(--muted)">${lineDot(lc)}${MTR_LINES[lc].name}</span>`).join('');
+      const body = document.getElementById('modalBody');
+      const hint = document.getElementById('cfgHint');
+      if(hint) body.insertBefore(leg, hint);
       // try select City One / Kowloon Tong if present
       const fromSta=document.getElementById('cfgFromSta');
       const toSta=document.getElementById('cfgToSta');
