@@ -70,6 +70,7 @@
     .leg-title{font-size:.85rem;font-weight:700;margin-bottom:6px}
     .fare-box{text-align:center;padding:12px;background:linear-gradient(135deg,#1a2a3a,#1a1a2e);border-radius:12px;margin:8px 0;border:1px solid #2a3a4a}
     .fare-amount{font-size:1.6rem;font-weight:800;color:var(--accent)}
+    .train-hours{display:inline-block;font-size:.74rem;background:rgba(76,201,240,.12);color:var(--accent);padding:2px 8px;border-radius:6px;margin-top:5px}
   </style>
 </head>
 <body>
@@ -117,524 +118,502 @@
   </div>
 
   <script>
-const MTR_NET = {"lines":{"AEL":{"name":"機場快綫","stations":[{"c":"HOK","zh":"香港","id":"39"},{"c":"KOW","zh":"九龍","id":"40"},{"c":"TSY","zh":"青衣","id":"42"},{"c":"AIR","zh":"機場","id":"47"},{"c":"AWE","zh":"博覽館","id":"56"}]},"DRL":{"name":"迪士尼綫","stations":[{"c":"DIS","zh":"迪士尼","id":"55"},{"c":"SUN","zh":"欣澳","id":"54"}]},"EAL":{"name":"東鐵綫","stations":[{"c":"ADM","zh":"金鐘","id":"2"},{"c":"EXC","zh":"會展","id":"94"},{"c":"HUH","zh":"紅磡","id":"64"},{"c":"MKK","zh":"旺角東","id":"65"},{"c":"KOT","zh":"九龍塘","id":"8"},{"c":"TAW","zh":"大圍","id":"67"},{"c":"SHT","zh":"沙田","id":"68"},{"c":"FOT","zh":"火炭","id":"69"},{"c":"UNI","zh":"大學","id":"71"},{"c":"TAP","zh":"大埔墟","id":"72"},{"c":"TWO","zh":"太和","id":"73"},{"c":"FAN","zh":"粉嶺","id":"74"},{"c":"SHS","zh":"上水","id":"75"},{"c":"LOW","zh":"羅湖","id":"76"}]},"ISL":{"name":"港島綫","stations":[{"c":"KET","zh":"堅尼地城","id":"83"},{"c":"HKU","zh":"香港大學","id":"82"},{"c":"SYP","zh":"西營盤","id":"81"},{"c":"SHW","zh":"上環","id":"26"},{"c":"CEN","zh":"中環","id":"1"},{"c":"ADM","zh":"金鐘","id":"2"},{"c":"WAC","zh":"灣仔","id":"27"},{"c":"CAB","zh":"銅鑼灣","id":"28"},{"c":"TIH","zh":"天后","id":"29"},{"c":"FOH","zh":"炮台山","id":"30"},{"c":"NOP","zh":"北角","id":"31"},{"c":"QUB","zh":"鰂魚涌","id":"32"},{"c":"TAK","zh":"太古","id":"33"},{"c":"SWH","zh":"西灣河","id":"34"},{"c":"SKW","zh":"筲箕灣","id":"35"},{"c":"HFC","zh":"杏花邨","id":"36"},{"c":"CHW","zh":"柴灣","id":"37"}]},"KTL":{"name":"觀塘綫","stations":[{"c":"WHA","zh":"黃埔","id":"85"},{"c":"HOM","zh":"何文田","id":"84"},{"c":"YMT","zh":"油麻地","id":"5"},{"c":"MOK","zh":"旺角","id":"6"},{"c":"PRE","zh":"太子","id":"16"},{"c":"SKM","zh":"石硤尾","id":"7"},{"c":"KOT","zh":"九龍塘","id":"8"},{"c":"LOF","zh":"樂富","id":"9"},{"c":"WTS","zh":"黃大仙","id":"10"},{"c":"DIH","zh":"鑽石山","id":"11"},{"c":"CHH","zh":"彩虹","id":"12"},{"c":"KOB","zh":"九龍灣","id":"13"},{"c":"NTK","zh":"牛頭角","id":"14"},{"c":"KWT","zh":"觀塘","id":"15"},{"c":"LAT","zh":"藍田","id":"38"},{"c":"YAT","zh":"油塘","id":"48"},{"c":"TIK","zh":"調景嶺","id":"49"}]},"SIL":{"name":"南港島綫","stations":[{"c":"ADM","zh":"金鐘","id":"2"},{"c":"OCP","zh":"海洋公園","id":"86"},{"c":"WCH","zh":"黃竹坑","id":"87"},{"c":"LET","zh":"利東","id":"88"},{"c":"SOH","zh":"海怡半島","id":"89"}]},"TCL":{"name":"東涌綫","stations":[{"c":"HOK","zh":"香港","id":"39"},{"c":"KOW","zh":"九龍","id":"40"},{"c":"OLY","zh":"奧運","id":"41"},{"c":"NAC","zh":"南昌","id":"53"},{"c":"LAK","zh":"茘景","id":"21"},{"c":"TSY","zh":"青衣","id":"42"},{"c":"SUN","zh":"欣澳","id":"54"},{"c":"TUC","zh":"東涌","id":"43"}]},"TKL":{"name":"將軍澳綫","stations":[{"c":"NOP","zh":"北角","id":"31"},{"c":"QUB","zh":"鰂魚涌","id":"32"},{"c":"YAT","zh":"油塘","id":"48"},{"c":"TIK","zh":"調景嶺","id":"49"},{"c":"TKO","zh":"將軍澳","id":"50"},{"c":"HAH","zh":"坑口","id":"51"},{"c":"POA","zh":"寶琳","id":"52"}]},"TML":{"name":"屯馬綫","stations":[{"c":"WKS","zh":"烏溪沙","id":"103"},{"c":"MOS","zh":"馬鞍山","id":"102"},{"c":"HEO","zh":"恆安","id":"101"},{"c":"TSH","zh":"大水坑","id":"100"},{"c":"SHM","zh":"石門","id":"99"},{"c":"CIO","zh":"第一城","id":"98"},{"c":"STW","zh":"沙田圍","id":"97"},{"c":"CKT","zh":"車公廟","id":"96"},{"c":"TAW","zh":"大圍","id":"67"},{"c":"HIK","zh":"顯徑","id":"90"},{"c":"DIH","zh":"鑽石山","id":"11"},{"c":"KAT","zh":"啟德","id":"91"},{"c":"SUW","zh":"宋皇臺","id":"92"},{"c":"TKW","zh":"土瓜灣","id":"93"},{"c":"HOM","zh":"何文田","id":"84"},{"c":"HUH","zh":"紅磡","id":"64"},{"c":"ETS","zh":"尖東","id":"80"},{"c":"AUS","zh":"柯士甸","id":"111"},{"c":"NAC","zh":"南昌","id":"53"},{"c":"MEF","zh":"美孚","id":"20"},{"c":"TWW","zh":"荃灣西","id":"114"},{"c":"KSR","zh":"錦上路","id":"115"},{"c":"YUL","zh":"元朗","id":"116"},{"c":"LOP","zh":"朗屏","id":"117"},{"c":"TIS","zh":"天水圍","id":"118"},{"c":"SIH","zh":"兆康","id":"119"},{"c":"TUM","zh":"屯門","id":"120"}]},"TWL":{"name":"荃灣綫","stations":[{"c":"CEN","zh":"中環","id":"1"},{"c":"ADM","zh":"金鐘","id":"2"},{"c":"TST","zh":"尖沙咀","id":"3"},{"c":"JOR","zh":"佐敦","id":"4"},{"c":"YMT","zh":"油麻地","id":"5"},{"c":"MOK","zh":"旺角","id":"6"},{"c":"PRE","zh":"太子","id":"16"},{"c":"SSP","zh":"深水埗","id":"17"},{"c":"CSW","zh":"長沙灣","id":"18"},{"c":"LCK","zh":"茘枝角","id":"19"},{"c":"MEF","zh":"美孚","id":"20"},{"c":"LAK","zh":"茘景","id":"21"},{"c":"KWF","zh":"葵芳","id":"22"},{"c":"KWH","zh":"葵興","id":"23"},{"c":"TWH","zh":"大窩口","id":"24"},{"c":"TSW","zh":"荃灣","id":"25"}]}},"stations":{"AWE":{"zh":"博覽館","id":"56"},"AIR":{"zh":"機場","id":"47"},"TSY":{"zh":"青衣","id":"42"},"KOW":{"zh":"九龍","id":"40"},"HOK":{"zh":"香港","id":"39"},"SUN":{"zh":"欣澳","id":"54"},"DIS":{"zh":"迪士尼","id":"55"},"LOW":{"zh":"羅湖","id":"76"},"SHS":{"zh":"上水","id":"75"},"FAN":{"zh":"粉嶺","id":"74"},"TWO":{"zh":"太和","id":"73"},"TAP":{"zh":"大埔墟","id":"72"},"UNI":{"zh":"大學","id":"71"},"FOT":{"zh":"火炭","id":"69"},"SHT":{"zh":"沙田","id":"68"},"TAW":{"zh":"大圍","id":"67"},"KOT":{"zh":"九龍塘","id":"8"},"MKK":{"zh":"旺角東","id":"65"},"HUH":{"zh":"紅磡","id":"64"},"EXC":{"zh":"會展","id":"94"},"ADM":{"zh":"金鐘","id":"2"},"LMC":{"zh":"落馬洲","id":"78"},"CHW":{"zh":"柴灣","id":"37"},"HFC":{"zh":"杏花邨","id":"36"},"SKW":{"zh":"筲箕灣","id":"35"},"SWH":{"zh":"西灣河","id":"34"},"TAK":{"zh":"太古","id":"33"},"QUB":{"zh":"鰂魚涌","id":"32"},"NOP":{"zh":"北角","id":"31"},"FOH":{"zh":"炮台山","id":"30"},"TIH":{"zh":"天后","id":"29"},"CAB":{"zh":"銅鑼灣","id":"28"},"WAC":{"zh":"灣仔","id":"27"},"CEN":{"zh":"中環","id":"1"},"SHW":{"zh":"上環","id":"26"},"SYP":{"zh":"西營盤","id":"81"},"HKU":{"zh":"香港大學","id":"82"},"KET":{"zh":"堅尼地城","id":"83"},"TIK":{"zh":"調景嶺","id":"49"},"YAT":{"zh":"油塘","id":"48"},"LAT":{"zh":"藍田","id":"38"},"KWT":{"zh":"觀塘","id":"15"},"NTK":{"zh":"牛頭角","id":"14"},"KOB":{"zh":"九龍灣","id":"13"},"CHH":{"zh":"彩虹","id":"12"},"DIH":{"zh":"鑽石山","id":"11"},"WTS":{"zh":"黃大仙","id":"10"},"LOF":{"zh":"樂富","id":"9"},"SKM":{"zh":"石硤尾","id":"7"},"PRE":{"zh":"太子","id":"16"},"MOK":{"zh":"旺角","id":"6"},"YMT":{"zh":"油麻地","id":"5"},"HOM":{"zh":"何文田","id":"84"},"WHA":{"zh":"黃埔","id":"85"},"WKS":{"zh":"烏溪沙","id":"103"},"MOS":{"zh":"馬鞍山","id":"102"},"HEO":{"zh":"恆安","id":"101"},"TSH":{"zh":"大水坑","id":"100"},"SHM":{"zh":"石門","id":"99"},"CIO":{"zh":"第一城","id":"98"},"STW":{"zh":"沙田圍","id":"97"},"CKT":{"zh":"車公廟","id":"96"},"HIK":{"zh":"顯徑","id":"90"},"KAT":{"zh":"啟德","id":"91"},"SUW":{"zh":"宋皇臺","id":"92"},"TKW":{"zh":"土瓜灣","id":"93"},"ETS":{"zh":"尖東","id":"80"},"AUS":{"zh":"柯士甸","id":"111"},"NAC":{"zh":"南昌","id":"53"},"MEF":{"zh":"美孚","id":"20"},"TWW":{"zh":"荃灣西","id":"114"},"KSR":{"zh":"錦上路","id":"115"},"YUL":{"zh":"元朗","id":"116"},"LOP":{"zh":"朗屏","id":"117"},"TIS":{"zh":"天水圍","id":"118"},"SIH":{"zh":"兆康","id":"119"},"TUM":{"zh":"屯門","id":"120"},"TUC":{"zh":"東涌","id":"43"},"LAK":{"zh":"茘景","id":"21"},"OLY":{"zh":"奧運","id":"41"},"POA":{"zh":"寶琳","id":"52"},"HAH":{"zh":"坑口","id":"51"},"TKO":{"zh":"將軍澳","id":"50"},"LHP":{"zh":"康城","id":"57"},"TSW":{"zh":"荃灣","id":"25"},"TWH":{"zh":"大窩口","id":"24"},"KWH":{"zh":"葵興","id":"23"},"KWF":{"zh":"葵芳","id":"22"},"LCK":{"zh":"茘枝角","id":"19"},"CSW":{"zh":"長沙灣","id":"18"},"SSP":{"zh":"深水埗","id":"17"},"JOR":{"zh":"佐敦","id":"4"},"TST":{"zh":"尖沙咀","id":"3"},"OCP":{"zh":"海洋公園","id":"86"},"WCH":{"zh":"黃竹坑","id":"87"},"LET":{"zh":"利東","id":"88"},"SOH":{"zh":"海怡半島","id":"89"}},"linePos":{"TCL":{"HOK":0,"KOW":1,"OLY":2,"NAC":3,"LAK":4,"TSY":5,"SUN":6,"TUC":7},"TWL":{"CEN":0,"ADM":1,"TST":2,"JOR":3,"YMT":4,"MOK":5,"PRE":6,"SSP":7,"CSW":8,"LCK":9,"MEF":10,"LAK":11,"KWF":12,"KWH":13,"TWH":14,"TSW":15},"ISL":{"KET":0,"HKU":1,"SYP":2,"SHW":3,"CEN":4,"ADM":5,"WAC":6,"CAB":7,"TIH":8,"FOH":9,"NOP":10,"QUB":11,"TAK":12,"SWH":13,"SKW":14,"HFC":15,"CHW":16},"EAL":{"ADM":0,"EXC":1,"HUH":2,"MKK":3,"KOT":4,"TAW":5,"SHT":6,"FOT":7,"UNI":8,"TAP":9,"TWO":10,"FAN":11,"SHS":12,"LOW":13},"DRL":{"DIS":0,"SUN":1},"AEL":{"HOK":0,"KOW":1,"TSY":2,"AIR":3,"AWE":4},"SIL":{"ADM":0,"OCP":1,"WCH":2,"LET":3,"SOH":4},"TKL":{"NOP":0,"QUB":1,"YAT":2,"TIK":3,"TKO":4,"HAH":5,"POA":6},"TML":{"WKS":0,"MOS":1,"HEO":2,"TSH":3,"SHM":4,"CIO":5,"STW":6,"CKT":7,"TAW":8,"HIK":9,"DIH":10,"KAT":11,"SUW":12,"TKW":13,"HOM":14,"HUH":15,"ETS":16,"AUS":17,"NAC":18,"MEF":19,"TWW":20,"KSR":21,"YUL":22,"LOP":23,"TIS":24,"SIH":25,"TUM":26},"KTL":{"WHA":0,"HOM":1,"YMT":2,"MOK":3,"PRE":4,"SKM":5,"KOT":6,"LOF":7,"WTS":8,"DIH":9,"CHH":10,"KOB":11,"NTK":12,"KWT":13,"LAT":14,"YAT":15,"TIK":16}}};
-    const MTR_LINES = MTR_NET.lines;
-    const MTR_STATIONS = MTR_NET.stations;
-    const MTR_LINE_POS = MTR_NET.linePos;
-    const MTR_COLORS = {
-      "AEL":"#1c7670","TCL":"#fe7f1d","TML":"#9a3b26","TKL":"#6b2082",
-      "EAL":"#53b7e8","SIL":"#bacd33","TWL":"#ed1d24","ISL":"#0860a8",
-      "KTL":"#1a9431","DRL":"#f550a6"
+const MTR_NET = {"lines":{"AEL":{"name":"機場快綫","stations":[{"c":"HOK","zh":"香港","id":"39"},{"c":"KOW","zh":"九龍","id":"40"},{"c":"TSY","zh":"青衣","id":"42"},{"c":"AIR","zh":"機場","id":"47"},{"c":"AWE","zh":"博覽館","id":"56"}]},"DRL":{"name":"迪士尼綫","stations":[{"c":"DIS","zh":"迪士尼","id":"55"},{"c":"SUN","zh":"欣澳","id":"54"}]},"EAL":{"name":"東鐵綫","stations":[{"c":"ADM","zh":"金鐘","id":"2"},{"c":"EXC","zh":"會展","id":"94"},{"c":"HUH","zh":"紅磡","id":"64"},{"c":"MKK","zh":"旺角東","id":"65"},{"c":"KOT","zh":"九龍塘","id":"8"},{"c":"TAW","zh":"大圍","id":"67"},{"c":"SHT","zh":"沙田","id":"68"},{"c":"FOT","zh":"火炭","id":"69"},{"c":"UNI","zh":"大學","id":"71"},{"c":"TAP","zh":"大埔墟","id":"72"},{"c":"TWO","zh":"太和","id":"73"},{"c":"FAN","zh":"粉嶺","id":"74"},{"c":"SHS","zh":"上水","id":"75"},{"c":"LOW","zh":"羅湖","id":"76"},{"c":"LMC","zh":"落馬洲","id":"78"}]},"ISL":{"name":"港島綫","stations":[{"c":"KET","zh":"堅尼地城","id":"83"},{"c":"HKU","zh":"香港大學","id":"82"},{"c":"SYP","zh":"西營盤","id":"81"},{"c":"SHW","zh":"上環","id":"26"},{"c":"CEN","zh":"中環","id":"1"},{"c":"ADM","zh":"金鐘","id":"2"},{"c":"WAC","zh":"灣仔","id":"27"},{"c":"CAB","zh":"銅鑼灣","id":"28"},{"c":"TIH","zh":"天后","id":"29"},{"c":"FOH","zh":"炮台山","id":"30"},{"c":"NOP","zh":"北角","id":"31"},{"c":"QUB","zh":"鰂魚涌","id":"32"},{"c":"TAK","zh":"太古","id":"33"},{"c":"SWH","zh":"西灣河","id":"34"},{"c":"SKW","zh":"筲箕灣","id":"35"},{"c":"HFC","zh":"杏花邨","id":"36"},{"c":"CHW","zh":"柴灣","id":"37"}]},"KTL":{"name":"觀塘綫","stations":[{"c":"WHA","zh":"黃埔","id":"85"},{"c":"HOM","zh":"何文田","id":"84"},{"c":"YMT","zh":"油麻地","id":"5"},{"c":"MOK","zh":"旺角","id":"6"},{"c":"PRE","zh":"太子","id":"16"},{"c":"SKM","zh":"石硤尾","id":"7"},{"c":"KOT","zh":"九龍塘","id":"8"},{"c":"LOF","zh":"樂富","id":"9"},{"c":"WTS","zh":"黃大仙","id":"10"},{"c":"DIH","zh":"鑽石山","id":"11"},{"c":"CHH","zh":"彩虹","id":"12"},{"c":"KOB","zh":"九龍灣","id":"13"},{"c":"NTK","zh":"牛頭角","id":"14"},{"c":"KWT","zh":"觀塘","id":"15"},{"c":"LAT","zh":"藍田","id":"38"},{"c":"YAT","zh":"油塘","id":"48"},{"c":"TIK","zh":"調景嶺","id":"49"}]},"SIL":{"name":"南港島綫","stations":[{"c":"ADM","zh":"金鐘","id":"2"},{"c":"OCP","zh":"海洋公園","id":"86"},{"c":"WCH","zh":"黃竹坑","id":"87"},{"c":"LET","zh":"利東","id":"88"},{"c":"SOH","zh":"海怡半島","id":"89"}]},"TCL":{"name":"東涌綫","stations":[{"c":"HOK","zh":"香港","id":"39"},{"c":"KOW","zh":"九龍","id":"40"},{"c":"OLY","zh":"奧運","id":"41"},{"c":"NAC","zh":"南昌","id":"53"},{"c":"LAK","zh":"茘景","id":"21"},{"c":"TSY","zh":"青衣","id":"42"},{"c":"SUN","zh":"欣澳","id":"54"},{"c":"TUC","zh":"東涌","id":"43"}]},"TKL":{"name":"將軍澳綫","stations":[{"c":"NOP","zh":"北角","id":"31"},{"c":"QUB","zh":"鰂魚涌","id":"32"},{"c":"YAT","zh":"油塘","id":"48"},{"c":"TIK","zh":"調景嶺","id":"49"},{"c":"TKO","zh":"將軍澳","id":"50"},{"c":"HAH","zh":"坑口","id":"51"},{"c":"POA","zh":"寶琳","id":"52"},{"c":"LHP","zh":"康城","id":"57"}]},"TML":{"name":"屯馬綫","stations":[{"c":"WKS","zh":"烏溪沙","id":"103"},{"c":"MOS","zh":"馬鞍山","id":"102"},{"c":"HEO","zh":"恆安","id":"101"},{"c":"TSH","zh":"大水坑","id":"100"},{"c":"SHM","zh":"石門","id":"99"},{"c":"CIO","zh":"第一城","id":"98"},{"c":"STW","zh":"沙田圍","id":"97"},{"c":"CKT","zh":"車公廟","id":"96"},{"c":"TAW","zh":"大圍","id":"67"},{"c":"HIK","zh":"顯徑","id":"90"},{"c":"DIH","zh":"鑽石山","id":"11"},{"c":"KAT","zh":"啟德","id":"91"},{"c":"SUW","zh":"宋皇臺","id":"92"},{"c":"TKW","zh":"土瓜灣","id":"93"},{"c":"HOM","zh":"何文田","id":"84"},{"c":"HUH","zh":"紅磡","id":"64"},{"c":"ETS","zh":"尖東","id":"80"},{"c":"AUS","zh":"柯士甸","id":"111"},{"c":"NAC","zh":"南昌","id":"53"},{"c":"MEF","zh":"美孚","id":"20"},{"c":"TWW","zh":"荃灣西","id":"114"},{"c":"KSR","zh":"錦上路","id":"115"},{"c":"YUL","zh":"元朗","id":"116"},{"c":"LOP","zh":"朗屏","id":"117"},{"c":"TIS","zh":"天水圍","id":"118"},{"c":"SIH","zh":"兆康","id":"119"},{"c":"TUM","zh":"屯門","id":"120"}]},"TWL":{"name":"荃灣綫","stations":[{"c":"CEN","zh":"中環","id":"1"},{"c":"ADM","zh":"金鐘","id":"2"},{"c":"TST","zh":"尖沙咀","id":"3"},{"c":"JOR","zh":"佐敦","id":"4"},{"c":"YMT","zh":"油麻地","id":"5"},{"c":"MOK","zh":"旺角","id":"6"},{"c":"PRE","zh":"太子","id":"16"},{"c":"SSP","zh":"深水埗","id":"17"},{"c":"CSW","zh":"長沙灣","id":"18"},{"c":"LCK","zh":"茘枝角","id":"19"},{"c":"MEF","zh":"美孚","id":"20"},{"c":"LAK","zh":"茘景","id":"21"},{"c":"KWF","zh":"葵芳","id":"22"},{"c":"KWH","zh":"葵興","id":"23"},{"c":"TWH","zh":"大窩口","id":"24"},{"c":"TSW","zh":"荃灣","id":"25"}]}},"stations":{"AWE":{"zh":"博覽館","id":"56"},"AIR":{"zh":"機場","id":"47"},"TSY":{"zh":"青衣","id":"42"},"KOW":{"zh":"九龍","id":"40"},"HOK":{"zh":"香港","id":"39"},"SUN":{"zh":"欣澳","id":"54"},"DIS":{"zh":"迪士尼","id":"55"},"LOW":{"zh":"羅湖","id":"76"},"SHS":{"zh":"上水","id":"75"},"FAN":{"zh":"粉嶺","id":"74"},"TWO":{"zh":"太和","id":"73"},"TAP":{"zh":"大埔墟","id":"72"},"UNI":{"zh":"大學","id":"71"},"FOT":{"zh":"火炭","id":"69"},"SHT":{"zh":"沙田","id":"68"},"TAW":{"zh":"大圍","id":"67"},"KOT":{"zh":"九龍塘","id":"8"},"MKK":{"zh":"旺角東","id":"65"},"HUH":{"zh":"紅磡","id":"64"},"EXC":{"zh":"會展","id":"94"},"ADM":{"zh":"金鐘","id":"2"},"LMC":{"zh":"落馬洲","id":"78"},"CHW":{"zh":"柴灣","id":"37"},"HFC":{"zh":"杏花邨","id":"36"},"SKW":{"zh":"筲箕灣","id":"35"},"SWH":{"zh":"西灣河","id":"34"},"TAK":{"zh":"太古","id":"33"},"QUB":{"zh":"鰂魚涌","id":"32"},"NOP":{"zh":"北角","id":"31"},"FOH":{"zh":"炮台山","id":"30"},"TIH":{"zh":"天后","id":"29"},"CAB":{"zh":"銅鑼灣","id":"28"},"WAC":{"zh":"灣仔","id":"27"},"CEN":{"zh":"中環","id":"1"},"SHW":{"zh":"上環","id":"26"},"SYP":{"zh":"西營盤","id":"81"},"HKU":{"zh":"香港大學","id":"82"},"KET":{"zh":"堅尼地城","id":"83"},"TIK":{"zh":"調景嶺","id":"49"},"YAT":{"zh":"油塘","id":"48"},"LAT":{"zh":"藍田","id":"38"},"KWT":{"zh":"觀塘","id":"15"},"NTK":{"zh":"牛頭角","id":"14"},"KOB":{"zh":"九龍灣","id":"13"},"CHH":{"zh":"彩虹","id":"12"},"DIH":{"zh":"鑽石山","id":"11"},"WTS":{"zh":"黃大仙","id":"10"},"LOF":{"zh":"樂富","id":"9"},"SKM":{"zh":"石硤尾","id":"7"},"PRE":{"zh":"太子","id":"16"},"MOK":{"zh":"旺角","id":"6"},"YMT":{"zh":"油麻地","id":"5"},"HOM":{"zh":"何文田","id":"84"},"WHA":{"zh":"黃埔","id":"85"},"WKS":{"zh":"烏溪沙","id":"103"},"MOS":{"zh":"馬鞍山","id":"102"},"HEO":{"zh":"恆安","id":"101"},"TSH":{"zh":"大水坑","id":"100"},"SHM":{"zh":"石門","id":"99"},"CIO":{"zh":"第一城","id":"98"},"STW":{"zh":"沙田圍","id":"97"},"CKT":{"zh":"車公廟","id":"96"},"HIK":{"zh":"顯徑","id":"90"},"KAT":{"zh":"啟德","id":"91"},"SUW":{"zh":"宋皇臺","id":"92"},"TKW":{"zh":"土瓜灣","id":"93"},"ETS":{"zh":"尖東","id":"80"},"AUS":{"zh":"柯士甸","id":"111"},"NAC":{"zh":"南昌","id":"53"},"MEF":{"zh":"美孚","id":"20"},"TWW":{"zh":"荃灣西","id":"114"},"KSR":{"zh":"錦上路","id":"115"},"YUL":{"zh":"元朗","id":"116"},"LOP":{"zh":"朗屏","id":"117"},"TIS":{"zh":"天水圍","id":"118"},"SIH":{"zh":"兆康","id":"119"},"TUM":{"zh":"屯門","id":"120"},"TUC":{"zh":"東涌","id":"43"},"LAK":{"zh":"茘景","id":"21"},"OLY":{"zh":"奧運","id":"41"},"POA":{"zh":"寶琳","id":"52"},"HAH":{"zh":"坑口","id":"51"},"TKO":{"zh":"將軍澳","id":"50"},"LHP":{"zh":"康城","id":"57"},"TSW":{"zh":"荃灣","id":"25"},"TWH":{"zh":"大窩口","id":"24"},"KWH":{"zh":"葵興","id":"23"},"KWF":{"zh":"葵芳","id":"22"},"LCK":{"zh":"茘枝角","id":"19"},"CSW":{"zh":"長沙灣","id":"18"},"SSP":{"zh":"深水埗","id":"17"},"JOR":{"zh":"佐敦","id":"4"},"TST":{"zh":"尖沙咀","id":"3"},"OCP":{"zh":"海洋公園","id":"86"},"WCH":{"zh":"黃竹坑","id":"87"},"LET":{"zh":"利東","id":"88"},"SOH":{"zh":"海怡半島","id":"89"}},"linePos":{"TCL":{"HOK":0,"KOW":1,"OLY":2,"NAC":3,"LAK":4,"TSY":5,"SUN":6,"TUC":7},"TWL":{"CEN":0,"ADM":1,"TST":2,"JOR":3,"YMT":4,"MOK":5,"PRE":6,"SSP":7,"CSW":8,"LCK":9,"MEF":10,"LAK":11,"KWF":12,"KWH":13,"TWH":14,"TSW":15},"ISL":{"KET":0,"HKU":1,"SYP":2,"SHW":3,"CEN":4,"ADM":5,"WAC":6,"CAB":7,"TIH":8,"FOH":9,"NOP":10,"QUB":11,"TAK":12,"SWH":13,"SKW":14,"HFC":15,"CHW":16},"EAL":{"ADM":0,"EXC":1,"HUH":2,"MKK":3,"KOT":4,"TAW":5,"SHT":6,"FOT":7,"UNI":8,"TAP":9,"TWO":10,"FAN":11,"SHS":12,"LOW":13,"LMC":14},"DRL":{"DIS":0,"SUN":1},"AEL":{"HOK":0,"KOW":1,"TSY":2,"AIR":3,"AWE":4},"SIL":{"ADM":0,"OCP":1,"WCH":2,"LET":3,"SOH":4},"TKL":{"NOP":0,"QUB":1,"YAT":2,"TIK":3,"TKO":4,"HAH":5,"POA":6,"LHP":7},"TML":{"WKS":0,"MOS":1,"HEO":2,"TSH":3,"SHM":4,"CIO":5,"STW":6,"CKT":7,"TAW":8,"HIK":9,"DIH":10,"KAT":11,"SUW":12,"TKW":13,"HOM":14,"HUH":15,"ETS":16,"AUS":17,"NAC":18,"MEF":19,"TWW":20,"KSR":21,"YUL":22,"LOP":23,"TIS":24,"SIH":25,"TUM":26},"KTL":{"WHA":0,"HOM":1,"YMT":2,"MOK":3,"PRE":4,"SKM":5,"KOT":6,"LOF":7,"WTS":8,"DIH":9,"CHH":10,"KOB":11,"NTK":12,"KWT":13,"LAT":14,"YAT":15,"TIK":16}}};
+const MTR_LINES = MTR_NET.lines;
+const MTR_STATIONS = MTR_NET.stations;
+const MTR_LINE_POS = MTR_NET.linePos;
+const MTR_COLORS = {"AEL":"#1c7670","TCL":"#fe7f1d","TML":"#9a3b26","TKL":"#6b2082","EAL":"#53b7e8","SIL":"#bacd33","TWL":"#ed1d24","ISL":"#0860a8","KTL":"#1a9431","DRL":"#f550a6"};
+const ID_TO_CODE = {};
+Object.entries(MTR_STATIONS).forEach(([code, info]) => { ID_TO_CODE[String(info.id)] = code; });
+const MTR_LINE_ID_MAP = {11:"ISL",12:"TWL",13:"KTL",14:"TCL",15:"AEL",16:"TKL",17:"EAL",18:"DRL",19:"SIL",20:"TML",21:"TML"};
+
+function lineDot(lc){
+  const c = MTR_COLORS[lc] || "#888";
+  return `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c};margin-right:6px;vertical-align:middle"></span>`;
+}
+
+let currentTab = 'kmb';
+let kmbPresets = JSON.parse(localStorage.getItem('a9_kmb') || '[]');
+let mtrPresets = JSON.parse(localStorage.getItem('a9_mtr') || '[]');
+let stopMap = null, _cfg = {}, _selectedPath = null;
+
+function forceRefresh(){
+  if('caches' in window) caches.keys().then(ns => ns.forEach(n => caches.delete(n)));
+  location.reload(true);
+}
+
+function switchTab(tab){
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  document.getElementById('settingsBtn').classList.toggle('hidden', tab === 'weather');
+}
+
+// ===== WEATHER =====
+const iconMap = {50:'☀️',51:'🌤',52:'⛅',53:'☁️',54:'🌫',60:'🌧',61:'🌦',62:'🌧',63:'⛈',64:'⛈',65:'🌧',80:'⛈',81:'⛈',82:'⛈',90:'🌡',91:'🌡',92:'💨',93:'💨'};
+async function loadWeather(){
+  try{
+    const data = await (await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc')).json();
+    document.getElementById('generalSituation').textContent = data.generalSituation || '';
+    const nowHK = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Hong_Kong'}));
+    const todayStr = nowHK.getFullYear()+String(nowHK.getMonth()+1).padStart(2,'0')+String(nowHK.getDate()).padStart(2,'0');
+    document.getElementById('forecastList').innerHTML = data.weatherForecast.map(day => {
+      const isToday = day.forecastDate === todayStr;
+      const icon = iconMap[day.ForecastIcon] || '🌤';
+      const dateStr = day.forecastDate.slice(4,6)+'/'+day.forecastDate.slice(6);
+      return `<div class="day-row ${isToday?'today':''}"><div><div class="day-name">${isToday?'今日':day.week}</div><div class="day-date">${dateStr}</div></div><div class="weather-icon">${icon}</div><div><div class="temps">${day.forecastMaxtemp.value}° <span>/ ${day.forecastMintemp.value}°</span></div><div class="weather-desc">${day.forecastWeather}</div></div><div class="psr-badge">PSR ${day.PSR}</div></div>`;
+    }).join('');
+    try{
+      const ut = new Date(data.updateTime);
+      window._hkoUpdateStr = ut.toLocaleString('zh-HK',{timeZone:'Asia/Hong_Kong',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
+    }catch(e){ window._hkoUpdateStr=''; }
+    updateWeatherClock();
+  }catch(e){ document.getElementById('forecastList').innerHTML = '<div class="status">載入失敗</div>'; }
+}
+function updateWeatherClock(){
+  const el = document.getElementById('weatherUpdate'); if(!el) return;
+  const nowStr = new Date().toLocaleString('zh-HK',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  el.textContent = window._hkoUpdateStr ? `天文台更新於 ${window._hkoUpdateStr} · 現在 ${nowStr}` : `現在 ${nowStr}`;
+}
+
+// ===== KMB =====
+function saveKmb(){ localStorage.setItem('a9_kmb', JSON.stringify(kmbPresets)); }
+function renderKmb(){
+  const box = document.getElementById('kmbPresets');
+  if(!kmbPresets.length){
+    box.innerHTML = `<div class="empty-state"><div style="font-size:2.2rem">🚏</div><p>尚未設定九巴路線</p><button class="btn btn-primary" style="max-width:180px;margin:0 auto" onclick="openSettings()">+ 新增路線</button></div>`;
+    return;
+  }
+  box.innerHTML = kmbPresets.map((p,i) => {
+    const dir = (p.orig_tc&&p.dest_tc)?`${p.orig_tc} → ${p.dest_tc}`:(p.dest_tc||'');
+    const bound = p.bound==='O'?'去程':'回程';
+    return `<div class="preset-card"><div class="preset-header"><div style="flex:1;min-width:0"><div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span class="preset-route">${p.route}</span><span style="font-size:.72rem;background:#2a2a3a;padding:2px 7px;border-radius:8px;color:var(--muted)">${bound}</span></div><div class="preset-dest">${dir}</div><div class="preset-stop">📍 ${p.stopName}</div></div><div style="display:flex;gap:6px"><button class="icon-btn" onclick="loadKmbEta(${i})">↻</button><button class="icon-btn danger" onclick="removeKmb(${i})">✕</button></div></div><div id="kmb-eta-${i}"><div class="status"><span class="spinner"></span> 載入中…</div></div></div>`;
+  }).join('');
+  kmbPresets.forEach((_,i)=>loadKmbEta(i));
+}
+async function loadKmbEta(i){
+  const p=kmbPresets[i], el=document.getElementById('kmb-eta-'+i); if(!p||!el) return;
+  try{
+    let res=await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/eta/${p.stopId}/${p.route}/${p.service_type||'1'}`);
+    let json=await res.json();
+    let etas=(json.data||[]).filter(e=>e.eta);
+    if(!etas.length){
+      res=await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${p.stopId}`);
+      json=await res.json();
+      etas=(json.data||[]).filter(e=>e.route===p.route&&e.eta);
+    }
+    renderEtas(el,etas);
+  }catch(e){ el.innerHTML='<div class="status">錯誤</div>'; }
+}
+function renderEtas(el,etas){
+  if(!etas||!etas.length){ el.innerHTML='<div class="status">暫無到站資料</div>'; return; }
+  const now=Date.now();
+  el.innerHTML=etas.slice(0,4).map(e=>{
+    const mins=Math.round((new Date(e.eta)-now)/60000);
+    let timeStr,cls;
+    if(mins<=1){timeStr='即將到達';cls='soon';}
+    else if(mins<=5){timeStr=mins+' 分鐘';cls='soon';}
+    else if(mins<=15){timeStr=mins+' 分鐘';cls='mid';}
+    else{timeStr=mins+' 分鐘';cls='late';}
+    return `<div class="eta-row"><div class="eta-meta">${e.dest_tc||''}${e.rmk_tc?' · '+e.rmk_tc:''}</div><div class="eta-time ${cls}">${timeStr}</div></div>`;
+  }).join('');
+}
+function removeKmb(i){ if(!confirm('刪除此九巴路線？'))return; kmbPresets.splice(i,1); saveKmb(); renderKmb(); }
+function refreshKmb(){ kmbPresets.forEach((_,i)=>loadKmbEta(i)); }
+
+// ===== OFFICIAL MTR HRROUTES API =====
+function resolveLineCode(lineId, staA, staB){
+  if(MTR_LINE_ID_MAP[lineId]){
+    const mapped = MTR_LINE_ID_MAP[lineId];
+    if(MTR_LINE_POS[mapped]?.[staA] !== undefined && MTR_LINE_POS[mapped]?.[staB] !== undefined){
+      return mapped;
+    }
+  }
+  for(const lc of Object.keys(MTR_LINE_POS)){
+    const pos = MTR_LINE_POS[lc];
+    if(pos[staA] !== undefined && pos[staB] !== undefined && Math.abs(pos[staA] - pos[staB]) === 1){
+      return lc;
+    }
+  }
+  return MTR_LINE_ID_MAP[lineId] || 'EAL';
+}
+
+async function fetchOfficialMtrRoutes(fromCode, toCode){
+  const oId = MTR_STATIONS[fromCode]?.id;
+  const dId = MTR_STATIONS[toCode]?.id;
+  if(!oId || !dId || fromCode === toCode) return [];
+
+  const targetUrl = `https://www.mtr.com.hk/share/customer/jp/api/HRRoutes/?o=${oId}&d=${dId}&lang=C`;
+  let data = null;
+
+  const urls = [
+    `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
+    targetUrl
+  ];
+  for(const u of urls){
+    try{
+      const res = await fetch(u);
+      if(res.ok){
+        data = await res.json();
+        if(data && data.errorCode === "0") break;
+      }
+    }catch(e){}
+  }
+
+  if(!data || data.errorCode !== "0" || !Array.isArray(data.routes)){
+    throw new Error('無法連接港鐵路線伺服器');
+  }
+
+  const firstTrain = data.firstTrain?.time || '';
+  const lastTrain = data.lastTrain?.time || '';
+
+  const mapped = data.routes.map(route => {
+    const rawPath = route.path || [];
+    const stationCodes = [];
+    const segmentLines = [];
+
+    for(let i = 0; i < rawPath.length; i++){
+      const code = ID_TO_CODE[String(rawPath[i].ID)];
+      if(!code) continue;
+      if(stationCodes.length && stationCodes[stationCodes.length - 1] === code) continue;
+      stationCodes.push(code);
+      if(stationCodes.length > 1){
+        const prevCode = stationCodes[stationCodes.length - 2];
+        const lc = resolveLineCode(rawPath[i - 1].lineID, prevCode, code);
+        segmentLines.push(lc);
+      }
+    }
+
+    const legs = [];
+    let i = 0;
+    while(i < segmentLines.length){
+      let j = i;
+      while(j < segmentLines.length && segmentLines[j] === segmentLines[i]) j++;
+      const line = segmentLines[i];
+      const from = stationCodes[i];
+      const to = stationCodes[j];
+      const pa = MTR_LINE_POS[line]?.[from] ?? 0;
+      const pb = MTR_LINE_POS[line]?.[to] ?? 0;
+      legs.push({
+        line,
+        from,
+        to,
+        hops: j - i,
+        stations: j - i + 1,
+        dir: pb > pa ? 'UP' : 'DOWN'
+      });
+      i = j;
+    }
+
+    const stdFare = route.fares?.find(f => f.fareTitle === 'standardClass')?.fareInfo;
+    const octopusFare = stdFare?.adult?.octopus || '';
+
+    return {
+      path: stationCodes,
+      lines: segmentLines,
+      legs,
+      totalStops: Math.max(0, stationCodes.length - 1),
+      ix: Math.max(0, legs.length - 1),
+      journeyTime: route.time,
+      fare: octopusFare,
+      firstTrain,
+      lastTrain
     };
-    function lineDot(lc){
-      const c = MTR_COLORS[lc] || "#888";
-      return `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c};margin-right:6px;vertical-align:middle"></span>`;
-    }
+  }).filter(r => r.legs.length > 0);
 
-    let currentTab = 'kmb';
-    let kmbPresets = JSON.parse(localStorage.getItem('a9_kmb') || '[]');
-    let mtrPresets = JSON.parse(localStorage.getItem('a9_mtr') || '[]');
-    let stopMap = null, _cfg = {}, fareMap = null, _selectedPath = null;
+  mapped.firstTrain = firstTrain;
+  mapped.lastTrain = lastTrain;
+  return mapped;
+}
 
-    function forceRefresh(){
-      if('caches' in window) caches.keys().then(ns => ns.forEach(n => caches.delete(n)));
-      location.reload(true);
-    }
+function legLabel(leg){
+  const ln = MTR_LINES[leg.line]?.name || leg.line;
+  const a = MTR_STATIONS[leg.from]?.zh || leg.from;
+  const b = MTR_STATIONS[leg.to]?.zh || leg.to;
+  const st = leg.stations ? `（${leg.stations} 站）` : '';
+  return `${lineDot(leg.line)}${ln} ${a} → ${b}${st}`;
+}
 
-    function switchTab(tab){
-      currentTab = tab;
-      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-      document.getElementById('panel-' + tab).classList.add('active');
-      document.getElementById('settingsBtn').classList.toggle('hidden', tab === 'weather');
-    }
+// ===== MTR UI =====
+function saveMtr(){ localStorage.setItem('a9_mtr', JSON.stringify(mtrPresets)); }
 
-    // ===== WEATHER =====
-    const iconMap = {50:'☀️',51:'🌤',52:'⛅',53:'☁️',54:'🌫',60:'🌧',61:'🌦',62:'🌧',63:'⛈',64:'⛈',65:'🌧',80:'⛈',81:'⛈',82:'⛈',90:'🌡',91:'🌡',92:'💨',93:'💨'};
-    async function loadWeather(){
-      try{
-        const data = await (await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=tc')).json();
-        document.getElementById('generalSituation').textContent = data.generalSituation || '';
-        const nowHK = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Hong_Kong'}));
-        const todayStr = nowHK.getFullYear()+String(nowHK.getMonth()+1).padStart(2,'0')+String(nowHK.getDate()).padStart(2,'0');
-        document.getElementById('forecastList').innerHTML = data.weatherForecast.map(day => {
-          const isToday = day.forecastDate === todayStr;
-          const icon = iconMap[day.ForecastIcon] || '🌤';
-          const dateStr = day.forecastDate.slice(4,6)+'/'+day.forecastDate.slice(6);
-          return `<div class="day-row ${isToday?'today':''}"><div><div class="day-name">${isToday?'今日':day.week}</div><div class="day-date">${dateStr}</div></div><div class="weather-icon">${icon}</div><div><div class="temps">${day.forecastMaxtemp.value}° <span>/ ${day.forecastMintemp.value}°</span></div><div class="weather-desc">${day.forecastWeather}</div></div><div class="psr-badge">PSR ${day.PSR}</div></div>`;
-        }).join('');
-        try{
-          const ut = new Date(data.updateTime);
-          window._hkoUpdateStr = ut.toLocaleString('zh-HK',{timeZone:'Asia/Hong_Kong',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
-        }catch(e){ window._hkoUpdateStr=''; }
-        updateWeatherClock();
-      }catch(e){ document.getElementById('forecastList').innerHTML = '<div class="status">載入失敗</div>'; }
-    }
-    function updateWeatherClock(){
-      const el = document.getElementById('weatherUpdate'); if(!el) return;
-      const nowStr = new Date().toLocaleString('zh-HK',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
-      el.textContent = window._hkoUpdateStr ? `天文台更新於 ${window._hkoUpdateStr} · 現在 ${nowStr}` : `現在 ${nowStr}`;
-    }
+function renderMtr(){
+  const box=document.getElementById('mtrPresets');
+  if(!mtrPresets.length){
+    box.innerHTML=`<div class="empty-state"><div style="font-size:2.2rem">🚇</div><p>尚未設定港鐵路線</p><button class="btn btn-primary" style="max-width:180px;margin:0 auto" onclick="openSettings()">+ 新增路線</button></div>`;
+    return;
+  }
+  box.innerHTML=mtrPresets.map((p,i)=>{
+    const fromZh=MTR_STATIONS[p.from]?.zh||p.from;
+    const toZh=MTR_STATIONS[p.to]?.zh||p.to;
+    const legs=p.legs||[];
+    const firstLine=legs[0]?.line;
+    const ix = legs.length>1 ? `轉車 ${legs.length-1} 次` : '直達';
+    const totalStops = p.totalStops || legs.reduce((s,l)=>s+(l.hops||1),0);
+    const timeBadge = p.journeyTime ? ` · 約 ${p.journeyTime} 分鐘` : '';
+    const fareStr = p.fare ? `$${parseFloat(p.fare).toFixed(1)}` : '';
+    const trainHours = (p.firstTrain || p.lastTrain)
+      ? `<div class="train-hours">頭班車 ${p.firstTrain||'--:--'} · 尾班車 ${p.lastTrain||'--:--'}</div>`
+      : '';
+    const pathText = legs.map(l=>{
+      const ln=MTR_LINES[l.line]?.name||l.line;
+      const a=MTR_STATIONS[l.from]?.zh||l.from;
+      const b=MTR_STATIONS[l.to]?.zh||l.to;
+      const st=l.stations?`（${l.stations} 站）`:(l.hops?`（${l.hops+1} 站）`:'');
+      return `${lineDot(l.line)}${ln} ${a} → ${b}${st}`;
+    }).join('<br>');
+    return `<div class="preset-card">
+      <div class="preset-header">
+        <div style="flex:1;min-width:0">
+          <div class="preset-route">${firstLine?lineDot(firstLine):''}${fromZh}</div>
+          <div class="preset-dest">往 ${toZh} · ${ix}${timeBadge} · 共 ${totalStops} 站 · <span id="mtr-fare-${i}" style="color:#f87171;font-weight:700">${fareStr}</span></div>
+          ${trainHours}
+          <div class="preset-stop" style="color:var(--muted);font-weight:400;line-height:1.5;margin-top:6px">${pathText}</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="icon-btn" onclick="loadMtrEta(${i})">↻</button>
+          <button class="icon-btn danger" onclick="removeMtr(${i})">✕</button>
+        </div>
+      </div>
+      <div id="mtr-eta-${i}"><div class="status"><span class="spinner"></span> 載入中…</div></div>
+    </div>`;
+  }).join('');
+  mtrPresets.forEach((_,i)=>loadMtrEta(i));
+}
 
-    // ===== KMB (same as before) =====
-    function saveKmb(){ localStorage.setItem('a9_kmb', JSON.stringify(kmbPresets)); }
-    function renderKmb(){
-      const box = document.getElementById('kmbPresets');
-      if(!kmbPresets.length){
-        box.innerHTML = `<div class="empty-state"><div style="font-size:2.2rem">🚏</div><p>尚未設定九巴路線</p><button class="btn btn-primary" style="max-width:180px;margin:0 auto" onclick="openSettings()">+ 新增路線</button></div>`;
+async function loadMtrEta(i){
+  const p=mtrPresets[i];
+  const el=document.getElementById('mtr-eta-'+i);
+  if(!p||!el) return;
+
+  if(!p.journeyTime || !p.fare || !p.lastTrain){
+    try{
+      const routes = await fetchOfficialMtrRoutes(p.from, p.to);
+      if(routes.length){
+        p.journeyTime = routes[0].journeyTime;
+        p.fare = routes[0].fare;
+        p.firstTrain = routes[0].firstTrain;
+        p.lastTrain = routes[0].lastTrain;
+        saveMtr();
+        renderMtr();
         return;
       }
-      box.innerHTML = kmbPresets.map((p,i) => {
-        const dir = (p.orig_tc&&p.dest_tc)?`${p.orig_tc} → ${p.dest_tc}`:(p.dest_tc||'');
-        const bound = p.bound==='O'?'去程':'回程';
-        return `<div class="preset-card"><div class="preset-header"><div style="flex:1;min-width:0"><div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span class="preset-route">${p.route}</span><span style="font-size:.72rem;background:#2a2a3a;padding:2px 7px;border-radius:8px;color:var(--muted)">${bound}</span></div><div class="preset-dest">${dir}</div><div class="preset-stop">📍 ${p.stopName}</div></div><div style="display:flex;gap:6px"><button class="icon-btn" onclick="loadKmbEta(${i})">↻</button><button class="icon-btn danger" onclick="removeKmb(${i})">✕</button></div></div><div id="kmb-eta-${i}"><div class="status"><span class="spinner"></span> 載入中…</div></div></div>`;
-      }).join('');
-      kmbPresets.forEach((_,i)=>loadKmbEta(i));
-    }
-    async function loadKmbEta(i){
-      const p=kmbPresets[i], el=document.getElementById('kmb-eta-'+i); if(!p||!el) return;
-      try{
-        let res=await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/eta/${p.stopId}/${p.route}/${p.service_type||'1'}`);
-        let json=await res.json();
-        let etas=(json.data||[]).filter(e=>e.eta);
-        if(!etas.length){
-          res=await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${p.stopId}`);
-          json=await res.json();
-          etas=(json.data||[]).filter(e=>e.route===p.route&&e.eta);
-        }
-        renderEtas(el,etas);
-      }catch(e){ el.innerHTML='<div class="status">錯誤</div>'; }
-    }
-    function renderEtas(el,etas){
-      if(!etas||!etas.length){ el.innerHTML='<div class="status">暫無到站資料</div>'; return; }
-      const now=Date.now();
-      el.innerHTML=etas.slice(0,4).map(e=>{
-        const mins=Math.round((new Date(e.eta)-now)/60000);
-        let timeStr,cls;
-        if(mins<=1){timeStr='即將到達';cls='soon';}
-        else if(mins<=5){timeStr=mins+' 分鐘';cls='soon';}
-        else if(mins<=15){timeStr=mins+' 分鐘';cls='mid';}
-        else{timeStr=mins+' 分鐘';cls='late';}
-        return `<div class="eta-row"><div class="eta-meta">${e.dest_tc||''}${e.rmk_tc?' · '+e.rmk_tc:''}</div><div class="eta-time ${cls}">${timeStr}</div></div>`;
-      }).join('');
-    }
-    function removeKmb(i){ if(!confirm('刪除此九巴路線？'))return; kmbPresets.splice(i,1); saveKmb(); renderKmb(); }
-    function refreshKmb(){ kmbPresets.forEach((_,i)=>loadKmbEta(i)); }
+    }catch(e){}
+  }
 
-    // ===== MTR PATHFINDING =====
-    function buildGraph(){
-      const g = {};
-      Object.keys(MTR_LINE_POS).forEach(lc => {
-        const codes = Object.keys(MTR_LINE_POS[lc]).sort((a,b)=>MTR_LINE_POS[lc][a]-MTR_LINE_POS[lc][b]);
-        codes.forEach((c,i) => {
-          if(!g[c]) g[c]=[];
-          if(i>0) g[c].push({to:codes[i-1], line:lc});
-          if(i<codes.length-1) g[c].push({to:codes[i+1], line:lc});
-        });
-      });
-      return g;
-    }
-    const MTR_GRAPH = buildGraph();
-
-    function findMtrPaths(start, end, maxPaths=5){
-      if(start===end) return [];
-      const results = [];
-      const sigs = new Set();
-
-      function legsOf(path, lines){
-        const legs=[]; let i=0;
-        while(i<lines.length){
-          let j=i; while(j<lines.length && lines[j]===lines[i]) j++;
-          legs.push({line:lines[i], from:path[i], to:path[j], hops:j-i, stations:j-i+1});
-          i=j;
-        }
-        legs.forEach(leg=>{
-          const pa=MTR_LINE_POS[leg.line]?.[leg.from] ?? 0;
-          const pb=MTR_LINE_POS[leg.line]?.[leg.to] ?? 0;
-          leg.dir = pb > pa ? 'UP' : 'DOWN';
-        });
-        return legs;
-      }
-      function addPath(path, lines){
-        const legs = legsOf(path, lines);
-        const sig = legs.map(l=>l.line+':'+l.from+'>'+l.to).join('|');
-        if(sigs.has(sig)) return;
-        sigs.add(sig);
-        results.push({path, lines, legs, totalStops: path.length-1, ix: legs.length-1});
-      }
-
-      // 1) Always add direct same-line paths first (all lines that contain both stations)
-      Object.keys(MTR_LINE_POS).forEach(lc => {
-        const pos = MTR_LINE_POS[lc];
-        if(pos[start]===undefined || pos[end]===undefined) return;
-        // rebuild ordered codes for this line
-        const codes = Object.keys(pos).sort((a,b)=>pos[a]-pos[b]);
-        const i = pos[start], j = pos[end];
-        let path;
-        if(i <= j) path = codes.filter(c => pos[c] >= i && pos[c] <= j);
-        else path = codes.filter(c => pos[c] >= j && pos[c] <= i).reverse();
-        if(path.length < 2 || path[0]!==start || path[path.length-1]!==end){
-          // fallback walk
-          path = [];
-          const step = i <= j ? 1 : -1;
-          for(let k=i; ; k+=step){
-            const c = codes.find(x => pos[x]===k);
-            if(c) path.push(c);
-            if(k===j) break;
-          }
-        }
-        if(path.length >= 2){
-          const lines = Array(path.length-1).fill(lc);
-          addPath(path, lines);
-        }
-      });
-
-      // 2) BFS for interchange paths
-      const q = [[start, [start], []]];
-      const seen = new Set([start+'|']);
-      const found = [];
-      while(q.length && found.length < 40){
-        const [cur, path, lines] = q.shift();
-        if(path.length > 30) continue; // allow full long lines
-        if(cur===end && path.length>1){ found.push({path:path.slice(), lines:lines.slice()}); continue; }
-        for(const e of (MTR_GRAPH[cur]||[])){
-          if(path.includes(e.to)) continue;
-          const key = e.to+'|'+e.line;
-          if(seen.has(key) && e.to!==end) continue;
-          seen.add(key);
-          q.push([e.to, path.concat(e.to), lines.concat(e.line)]);
-        }
-      }
-      found.sort((a,b)=>{
-        const ia = legsOf(a.path,a.lines).length-1;
-        const ib = legsOf(b.path,b.lines).length-1;
-        if(ia!==ib) return ia-ib;
-        return a.path.length - b.path.length;
-      });
-      for(const f of found){
-        addPath(f.path, f.lines);
-        if(results.length >= maxPaths + 3) break;
-      }
-
-      // Rank: 0 interchange first, then fewer stops, then fewer interchanges
-      results.sort((a,b)=>{
-        if(a.ix !== b.ix) return a.ix - b.ix;
-        return a.totalStops - b.totalStops;
-      });
-      // Drop clearly worse than best
-      const best = results[0];
-      const filtered = results.filter(r=>{
-        if(!best) return true;
-        if(r.ix > best.ix + 1) return false;
-        if(r.ix === best.ix && r.totalStops > best.totalStops + 8) return false;
-        return true;
-      });
-      return filtered.slice(0, maxPaths);
-    }
-
-    function legLabel(leg){
-      const ln = MTR_LINES[leg.line]?.name || leg.line;
-      const a = MTR_STATIONS[leg.from]?.zh || leg.from;
-      const b = MTR_STATIONS[leg.to]?.zh || leg.to;
-      const st = leg.stations ? `（${leg.stations} 站）` : '';
-      return `${lineDot(leg.line)}${ln} ${a} → ${b}${st}`;
-    }
-
-    // ===== MTR UI =====
-    function saveMtr(){ localStorage.setItem('a9_mtr', JSON.stringify(mtrPresets)); }
-
-    function renderMtr(){
-      const box=document.getElementById('mtrPresets');
-      if(!mtrPresets.length){
-        box.innerHTML=`<div class="empty-state"><div style="font-size:2.2rem">🚇</div><p>尚未設定港鐵路線</p><button class="btn btn-primary" style="max-width:180px;margin:0 auto" onclick="openSettings()">+ 新增路線</button></div>`;
-        return;
-      }
-      box.innerHTML=mtrPresets.map((p,i)=>{
-        const fromZh=MTR_STATIONS[p.from]?.zh||p.from;
-        const toZh=MTR_STATIONS[p.to]?.zh||p.to;
-        const legs=p.legs||[];
-        const firstLine=legs[0]?.line;
-        const ix = legs.length>1 ? `轉車 ${legs.length-1} 次` : '直達';
-        const totalStops = p.totalStops || legs.reduce((s,l)=>s+(l.hops||1),0);
-        const pathText = legs.map(l=>{
-          const ln=MTR_LINES[l.line]?.name||l.line;
-          const a=MTR_STATIONS[l.from]?.zh||l.from;
-          const b=MTR_STATIONS[l.to]?.zh||l.to;
-          const st=l.stations?`（${l.stations} 站）`:(l.hops?`（${l.hops+1} 站）`:'');
-          return `${lineDot(l.line)}${ln} ${a} → ${b}${st}`;
-        }).join('<br>');
-        return `<div class="preset-card">
-          <div class="preset-header">
-            <div style="flex:1;min-width:0">
-              <div class="preset-route">${firstLine?lineDot(firstLine):''}${fromZh}</div>
-              <div class="preset-dest">往 ${toZh} · ${ix} · 共 ${totalStops} 站 · <span id="mtr-fare-${i}" style="color:#f87171;font-weight:700"></span></div>
-              <div class="preset-stop" style="color:var(--muted);font-weight:400;line-height:1.5;margin-top:6px">${pathText}</div>
-            </div>
-            <div style="display:flex;gap:6px">
-              <button class="icon-btn" onclick="loadMtrEta(${i})">↻</button>
-              <button class="icon-btn danger" onclick="removeMtr(${i})">✕</button>
-            </div>
-          </div>
-          <div id="mtr-eta-${i}"><div class="status"><span class="spinner"></span> 載入中…</div></div>
-        </div>`;
-      }).join('');
-      mtrPresets.forEach((_,i)=>loadMtrEta(i));
-    }
-
-    async function ensureFareMap(){
-      if(fareMap && Object.keys(fareMap).length > 100) return fareMap;
-      try{
-        const c=localStorage.getItem('a9_mtr_fares_v3');
-        if(c){ const p=JSON.parse(c); if(p && Object.keys(p).length>100){ fareMap=p; return fareMap; } }
-      }catch(e){}
-      // same-origin fares.json (upload next to index.html on GitHub)
-      try{
-        const res = await fetch('fares.json');
-        if(res.ok){
-          fareMap = await res.json();
-          try{ localStorage.setItem('a9_mtr_fares_v3', JSON.stringify(fareMap)); }catch(e){}
-          return fareMap;
-        }
-      }catch(e){}
-      // fallback: try official CSV (may fail CORS on some hosts)
-      try{
-        const text=await (await fetch('https://opendata.mtr.com.hk/data/mtr_lines_fares.csv')).text();
-        fareMap={};
-        const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/);
-        for(let i=1;i<lines.length;i++){
-          const line=lines[i]; if(!line.trim()) continue;
-          const cols=[]; let cur='', q=false;
-          for(let j=0;j<line.length;j++){
-            const ch=line[j];
-            if(ch==='"'){ q=!q; continue; }
-            if(ch===',' && !q){ cols.push(cur.trim()); cur=''; continue; }
-            cur+=ch;
-          }
-          cols.push(cur.trim());
-          if(cols.length>=5){
-            const sid=cols[1], did=cols[3], fare=cols[4];
-            if(sid&&did&&fare){ fareMap[sid+'-'+did]=fare; }
-          }
-        }
-        try{ localStorage.setItem('a9_mtr_fares_v3', JSON.stringify(fareMap)); }catch(e){}
-      }catch(e){ fareMap = fareMap || {}; }
-      return fareMap;
-    }
-
-    async function loadMtrEta(i){
-      const p=mtrPresets[i];
-      const el=document.getElementById('mtr-eta-'+i);
-      const fareEl=document.getElementById('mtr-fare-'+i);
-      if(!p||!el) return;
-      // fare
-      try{
-        await ensureFareMap();
-        const fid=MTR_STATIONS[p.from]?.id, tid=MTR_STATIONS[p.to]?.id;
-        const fare=fareMap[fid+'-'+tid];
-        if(fareEl){
-          fareEl.textContent = fare!==undefined ? `$${parseFloat(fare).toFixed(1)}` : '';
-        }
-      }catch(e){ if(fareEl) fareEl.innerHTML=''; }
-
-      // each leg schedule
-      let html='';
-      for(const leg of (p.legs||[])){
-        // recompute direction from line positions (fixes old saves)
-        const pa=MTR_LINE_POS[leg.line]?.[leg.from] ?? 0;
-        const pb=MTR_LINE_POS[leg.line]?.[leg.to] ?? 0;
-        leg.dir = pb > pa ? 'UP' : 'DOWN';
-        const ln=MTR_LINES[leg.line]?.name||leg.line;
-        const fromZh=MTR_STATIONS[leg.from]?.zh||leg.from;
-        const toZh=MTR_STATIONS[leg.to]?.zh||leg.to;
-        const stCount=leg.stations?`（${leg.stations} 站）`:'';
-        html += `<div class="leg-block"><div class="leg-title">${lineDot(leg.line)}${ln} · ${fromZh} → ${toZh}${stCount}</div>`;
-        try{
-          const res=await fetch(`https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=${leg.line}&sta=${leg.from}`);
-          const json=await res.json();
-          const key=leg.line+'-'+leg.from;
-          const data=json.data&&json.data[key];
-          const trains=(data && data[leg.dir]) || [];
-          if(!trains.length){
-            // fallback: show the other dir if empty? No - stay strict
-            html += `<div class="status" style="padding:8px">暫無此方向班次</div>`;
-          } else {
-            html += trains.slice(0,3).map(t=>{
-              const mins=parseInt(t.ttnt,10);
-              let timeStr,cls;
-              if(isNaN(mins)||mins<=1){timeStr='即將到達';cls='soon';}
-              else if(mins<=5){timeStr=mins+' 分鐘';cls='soon';}
-              else if(mins<=15){timeStr=mins+' 分鐘';cls='mid';}
-              else{timeStr=mins+' 分鐘';cls='late';}
-              const dest=MTR_STATIONS[t.dest]?.zh||t.dest;
-              return `<div class="eta-row"><div class="eta-meta">往 ${dest} · 月台 ${t.plat||'-'}</div><div class="eta-time ${cls}">${timeStr}</div></div>`;
-            }).join('');
-          }
-        }catch(e){ html += `<div class="status" style="padding:8px">載入失敗</div>`; }
-        html += `</div>`;
-      }
-      el.innerHTML = html || '<div class="status">無資料</div>';
-    }
-
-    function removeMtr(i){ if(!confirm('刪除此港鐵路線？'))return; mtrPresets.splice(i,1); saveMtr(); renderMtr(); }
-    function refreshMtr(){ mtrPresets.forEach((_,i)=>loadMtrEta(i)); }
-
-    // ===== SETTINGS =====
-    function openSettings(){
-      document.getElementById('settingsModal').classList.remove('hidden');
-      document.getElementById('saveBtn').disabled=true;
-      _cfg={}; _selectedPath=null;
-      if(currentTab==='kmb'){
-        document.getElementById('modalTitle').textContent='新增九巴路線';
-        openKmbSettings();
+  let html='';
+  for(const leg of (p.legs||[])){
+    const pa=MTR_LINE_POS[leg.line]?.[leg.from] ?? 0;
+    const pb=MTR_LINE_POS[leg.line]?.[leg.to] ?? 0;
+    leg.dir = pb > pa ? 'UP' : 'DOWN';
+    const ln=MTR_LINES[leg.line]?.name||leg.line;
+    const fromZh=MTR_STATIONS[leg.from]?.zh||leg.from;
+    const toZh=MTR_STATIONS[leg.to]?.zh||leg.to;
+    const stCount=leg.stations?`（${leg.stations} 站）`:'';
+    html += `<div class="leg-block"><div class="leg-title">${lineDot(leg.line)}${ln} · ${fromZh} → ${toZh}${stCount}</div>`;
+    try{
+      const res=await fetch(`https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=${leg.line}&sta=${leg.from}`);
+      const json=await res.json();
+      const key=leg.line+'-'+leg.from;
+      const data=json.data&&json.data[key];
+      const trains=(data && data[leg.dir]) || [];
+      if(!trains.length){
+        html += `<div class="status" style="padding:8px">暫無此方向班次</div>`;
       } else {
-        document.getElementById('modalTitle').textContent='新增港鐵路線';
-        openMtrSettings();
-      }
-    }
-    function closeSettings(){ document.getElementById('settingsModal').classList.add('hidden'); }
-
-    function openKmbSettings(){
-      document.getElementById('modalBody').innerHTML=`<label>1. 輸入路線號碼</label><div style="display:flex;gap:8px"><input type="text" id="cfgRoute" placeholder="例如 49X" style="flex:1"/><button class="btn btn-primary" style="flex:0 0 auto;padding:10px 14px" onclick="fetchKmbDirections()">Fetch</button></div><div class="search-hint" id="cfgHint"></div><div id="cfgDirSection" class="hidden" style="margin-top:14px"><label>2. 選擇方向</label><div id="cfgDirList" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"></div></div><div id="cfgStopSection" class="hidden" style="margin-top:14px"><label>3. 選擇車站</label><select id="cfgStop"></select></div>`;
-      document.getElementById('cfgRoute').onkeydown=e=>{if(e.key==='Enter')fetchKmbDirections();};
-      renderCfgListKmb();
-    }
-    function renderCfgListKmb(){
-      const el=document.getElementById('cfgList');
-      if(!kmbPresets.length){el.innerHTML='<div style="color:var(--muted);font-size:.85rem">（無）</div>';return;}
-      el.innerHTML=kmbPresets.map((p,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #2a2a3a;font-size:.9rem"><span><strong style="color:var(--accent)">${p.route}</strong> · ${p.stopName}</span><button class="icon-btn danger" style="width:28px;height:28px" onclick="removeKmb(${i});openSettings()">✕</button></div>`).join('');
-    }
-    async function fetchKmbDirections(){
-      const route=document.getElementById('cfgRoute').value.trim().toUpperCase();
-      const hint=document.getElementById('cfgHint');
-      document.getElementById('cfgDirSection').classList.add('hidden');
-      document.getElementById('cfgStopSection').classList.add('hidden');
-      document.getElementById('saveBtn').disabled=true;
-      if(!route){hint.textContent='請輸入路線號碼';return;}
-      hint.innerHTML='<span class="spinner"></span> 搜尋中…';
-      try{
-        const matches=(await (await fetch('https://data.etabus.gov.hk/v1/transport/kmb/route/')).json()).data.filter(r=>r.route===route);
-        if(!matches.length){hint.textContent='找不到此路線';return;}
-        hint.textContent=`找到 ${matches.length} 個方向`;
-        document.getElementById('cfgDirList').innerHTML=matches.map(m=>{
-          const o=m.orig_tc||m.orig_en,d=m.dest_tc||m.dest_en;
-          const bound=m.bound==='O'?'去程':'回程';
-          return `<button class="btn btn-secondary" style="text-align:left;padding:12px 14px" onclick='selectKmbDir(${JSON.stringify(m).replace(/'/g,"&#39;")})'><div style="font-weight:700">${bound}</div><div style="font-size:.9rem">${o} → ${d}</div></button>`;
+        html += trains.slice(0,3).map(t=>{
+          const mins=parseInt(t.ttnt,10);
+          let timeStr,cls;
+          if(isNaN(mins)||mins<=1){timeStr='即將到達';cls='soon';}
+          else if(mins<=5){timeStr=mins+' 分鐘';cls='soon';}
+          else if(mins<=15){timeStr=mins+' 分鐘';cls='mid';}
+          else{timeStr=mins+' 分鐘';cls='late';}
+          const dest=MTR_STATIONS[t.dest]?.zh||t.dest;
+          return `<div class="eta-row"><div class="eta-meta">往 ${dest} · 月台 ${t.plat||'-'}</div><div class="eta-time ${cls}">${timeStr}</div></div>`;
         }).join('');
-        document.getElementById('cfgDirSection').classList.remove('hidden');
-      }catch(e){hint.textContent='Error: '+e.message;}
-    }
-    async function selectKmbDir(meta){
-      _cfg={type:'kmb',meta};
-      const hint=document.getElementById('cfgHint');
-      hint.innerHTML='<span class="spinner"></span> 載入車站…';
-      document.getElementById('cfgStopSection').classList.add('hidden');
-      document.getElementById('saveBtn').disabled=true;
-      try{
-        if(!stopMap){ const j=await (await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop')).json(); stopMap={}; j.data.forEach(s=>stopMap[s.stop]=s); }
-        const dir=meta.bound==='O'?'outbound':'inbound';
-        const stops=(await (await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${meta.route}/${dir}/${meta.service_type}`)).json()).data||[];
-        document.getElementById('cfgStop').innerHTML=stops.map((s,i)=>{
-          const name=(stopMap[s.stop]||{}).name_tc||s.stop;
-          return `<option value="${s.stop}" data-name="${name.replace(/"/g,'&quot;')}">${i+1}. ${name}</option>`;
-        }).join('');
-        document.getElementById('cfgStopSection').classList.remove('hidden');
-        document.getElementById('saveBtn').disabled=false;
-        hint.textContent=`${stops.length} 個車站`;
-      }catch(e){hint.textContent='Error: '+e.message;}
-    }
-
-    function openMtrSettings(){
-      const lineOpts=Object.keys(MTR_LINES).map(lc=>`<option value="${lc}">${MTR_LINES[lc].name}</option>`).join('');
-      document.getElementById('modalBody').innerHTML=`
-        <label>出發站</label>
-        <div class="mtr-row"><select id="cfgFromLine" onchange="cfgFillSta('from')">${lineOpts}</select><select id="cfgFromSta"></select></div>
-        <label>到達站</label>
-        <div class="mtr-row"><select id="cfgToLine" onchange="cfgFillSta('to')">${lineOpts}</select><select id="cfgToSta"></select></div>
-        <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="calcMtrPaths()">計算路線</button>
-        <div class="search-hint" id="cfgHint"></div>
-        <div id="cfgPathList" style="margin-top:12px"></div>`;
-      document.getElementById('cfgFromLine').value='TML';
-      document.getElementById('cfgToLine').value='EAL';
-      cfgFillSta('from'); cfgFillSta('to');
-      // try select City One / Kowloon Tong if present
-      const fromSta=document.getElementById('cfgFromSta');
-      const toSta=document.getElementById('cfgToSta');
-      [...fromSta.options].forEach(o=>{ if(o.text==='第一城') fromSta.value=o.value; });
-      [...toSta.options].forEach(o=>{ if(o.text==='九龍塘') toSta.value=o.value; });
-      renderCfgListMtr();
-    }
-    function cfgFillSta(which){
-      const lineEl=document.getElementById(which==='from'?'cfgFromLine':'cfgToLine');
-      const staEl=document.getElementById(which==='from'?'cfgFromSta':'cfgToSta');
-      const sts=MTR_LINES[lineEl.value]?.stations||[];
-      staEl.innerHTML=sts.map(s=>`<option value="${s.c}">${s.zh}</option>`).join('');
-    }
-    function calcMtrPaths(){
-      const from=document.getElementById('cfgFromSta').value;
-      const to=document.getElementById('cfgToSta').value;
-      const hint=document.getElementById('cfgHint');
-      const list=document.getElementById('cfgPathList');
-      _selectedPath=null;
-      document.getElementById('saveBtn').disabled=true;
-      if(!from||!to||from===to){ hint.textContent='請選擇不同的出發與到達站'; list.innerHTML=''; return; }
-      hint.innerHTML='<span class="spinner"></span> 計算中…';
-      const paths=findMtrPaths(from,to);
-      if(!paths.length){ hint.textContent='找不到路線'; list.innerHTML=''; return; }
-      hint.textContent=`找到 ${paths.length} 條路線，請選擇一條儲存`;
-      list.innerHTML=paths.map((p,idx)=>{
-        const ix=p.legs.length-1;
-        const summary=p.legs.map(legLabel).join('<br>');
-        const badge=ix===0?'直達':`轉車 ${ix} 次`;
-        return `<button class="path-option" id="pathOpt${idx}" onclick="selectPath(${idx})">
-          <div style="font-weight:700;margin-bottom:4px">${badge} · 共 ${p.path.length-1} 站</div>
-          <div style="font-size:.85rem;color:var(--muted);line-height:1.55">${summary}</div>
-        </button>`;
-      }).join('');
-      window._pathOptions=paths;
-    }
-    function selectPath(idx){
-      _selectedPath=window._pathOptions[idx];
-      document.querySelectorAll('.path-option').forEach((el,i)=>el.classList.toggle('selected',i===idx));
-      document.getElementById('saveBtn').disabled=false;
-    }
-    function renderCfgListMtr(){
-      const el=document.getElementById('cfgList');
-      if(!mtrPresets.length){el.innerHTML='<div style="color:var(--muted);font-size:.85rem">（無）</div>';return;}
-      el.innerHTML=mtrPresets.map((p,i)=>{
-        const a=MTR_STATIONS[p.from]?.zh||p.from, b=MTR_STATIONS[p.to]?.zh||p.to;
-        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #2a2a3a;font-size:.9rem"><span><strong style="color:var(--accent)">${a}</strong> → ${b}</span><button class="icon-btn danger" style="width:28px;height:28px" onclick="removeMtr(${i});openSettings()">✕</button></div>`;
-      }).join('');
-    }
-
-    function saveCurrentPreset(){
-      if(currentTab==='kmb'){
-        const meta=_cfg.meta; if(!meta) return;
-        const stopId=document.getElementById('cfgStop').value;
-        const opt=document.getElementById('cfgStop').selectedOptions[0];
-        const stopName=opt?.dataset.name||stopId;
-        const preset={route:meta.route,bound:meta.bound,service_type:String(meta.service_type),stopId,stopName,dest_tc:meta.dest_tc||'',orig_tc:meta.orig_tc||''};
-        if(kmbPresets.some(p=>p.route===preset.route&&p.stopId===preset.stopId&&p.bound===preset.bound)){alert('此組合已存在');return;}
-        kmbPresets.push(preset); saveKmb(); closeSettings(); renderKmb();
-      } else {
-        if(!_selectedPath) return;
-        const from=document.getElementById('cfgFromSta').value;
-        const to=document.getElementById('cfgToSta').value;
-        const preset={from, to, legs:_selectedPath.legs, totalStops:_selectedPath.totalStops||(_selectedPath.path.length-1)};
-        if(mtrPresets.some(p=>p.from===from&&p.to===to&&JSON.stringify(p.legs)===JSON.stringify(preset.legs))){alert('此組合已存在');return;}
-        mtrPresets.push(preset); saveMtr(); closeSettings(); renderMtr();
       }
-    }
+    }catch(e){ html += `<div class="status" style="padding:8px">載入失敗</div>`; }
+    html += `</div>`;
+  }
+  el.innerHTML = html || '<div class="status">無資料</div>';
+}
 
-    // INIT
-    switchTab('kmb');
-    renderKmb();
-    renderMtr();
-    loadWeather();
-    setInterval(refreshKmb, 30000);
-    setInterval(refreshMtr, 30000);
-    setInterval(loadWeather, 30*60*1000);
-    setInterval(updateWeatherClock, 1000);
-    document.getElementById('settingsModal').addEventListener('click', e => { if(e.target.id==='settingsModal') closeSettings(); });
+function removeMtr(i){ if(!confirm('刪除此港鐵路線？'))return; mtrPresets.splice(i,1); saveMtr(); renderMtr(); }
+function refreshMtr(){ mtrPresets.forEach((_,i)=>loadMtrEta(i)); }
+
+// ===== SETTINGS =====
+function openSettings(){
+  document.getElementById('settingsModal').classList.remove('hidden');
+  document.getElementById('saveBtn').disabled=true;
+  _cfg={}; _selectedPath=null;
+  if(currentTab==='kmb'){
+    document.getElementById('modalTitle').textContent='新增九巴路線';
+    openKmbSettings();
+  } else {
+    document.getElementById('modalTitle').textContent='新增港鐵路線';
+    openMtrSettings();
+  }
+}
+function closeSettings(){ document.getElementById('settingsModal').classList.add('hidden'); }
+
+function openKmbSettings(){
+  document.getElementById('modalBody').innerHTML=`<label>1. 輸入路線號碼</label><div style="display:flex;gap:8px"><input type="text" id="cfgRoute" placeholder="例如 49X" style="flex:1"/><button class="btn btn-primary" style="flex:0 0 auto;padding:10px 14px" onclick="fetchKmbDirections()">Fetch</button></div><div class="search-hint" id="cfgHint"></div><div id="cfgDirSection" class="hidden" style="margin-top:14px"><label>2. 選擇方向</label><div id="cfgDirList" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"></div></div><div id="cfgStopSection" class="hidden" style="margin-top:14px"><label>3. 選擇車站</label><select id="cfgStop"></select></div>`;
+  document.getElementById('cfgRoute').onkeydown=e=>{if(e.key==='Enter')fetchKmbDirections();};
+  renderCfgListKmb();
+}
+function renderCfgListKmb(){
+  const el=document.getElementById('cfgList');
+  if(!kmbPresets.length){el.innerHTML='<div style="color:var(--muted);font-size:.85rem">（無）</div>';return;}
+  el.innerHTML=kmbPresets.map((p,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #2a2a3a;font-size:.9rem"><span><strong style="color:var(--accent)">${p.route}</strong> · ${p.stopName}</span><button class="icon-btn danger" style="width:28px;height:28px" onclick="removeKmb(${i});openSettings()">✕</button></div>`).join('');
+}
+async function fetchKmbDirections(){
+  const route=document.getElementById('cfgRoute').value.trim().toUpperCase();
+  const hint=document.getElementById('cfgHint');
+  document.getElementById('cfgDirSection').classList.add('hidden');
+  document.getElementById('cfgStopSection').classList.add('hidden');
+  document.getElementById('saveBtn').disabled=true;
+  if(!route){hint.textContent='請輸入路線號碼';return;}
+  hint.innerHTML='<span class="spinner"></span> 搜尋中…';
+  try{
+    const matches=(await (await fetch('https://data.etabus.gov.hk/v1/transport/kmb/route/')).json()).data.filter(r=>r.route===route);
+    if(!matches.length){hint.textContent='找不到此路線';return;}
+    hint.textContent=`找到 ${matches.length} 個方向`;
+    document.getElementById('cfgDirList').innerHTML=matches.map(m=>{
+      const o=m.orig_tc||m.orig_en,d=m.dest_tc||m.dest_en;
+      const bound=m.bound==='O'?'去程':'回程';
+      return `<button class="btn btn-secondary" style="text-align:left;padding:12px 14px" onclick='selectKmbDir(${JSON.stringify(m).replace(/'/g,"&#39;")})'><div style="font-weight:700">${bound}</div><div style="font-size:.9rem">${o} → ${d}</div></button>`;
+    }).join('');
+    document.getElementById('cfgDirSection').classList.remove('hidden');
+  }catch(e){hint.textContent='Error: '+e.message;}
+}
+async function selectKmbDir(meta){
+  _cfg={type:'kmb',meta};
+  const hint=document.getElementById('cfgHint');
+  hint.innerHTML='<span class="spinner"></span> 載入車站…';
+  document.getElementById('cfgStopSection').classList.add('hidden');
+  document.getElementById('saveBtn').disabled=true;
+  try{
+    if(!stopMap){ const j=await (await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop')).json(); stopMap={}; j.data.forEach(s=>stopMap[s.stop]=s); }
+    const dir=meta.bound==='O'?'outbound':'inbound';
+    const stops=(await (await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${meta.route}/${dir}/${meta.service_type}`)).json()).data||[];
+    document.getElementById('cfgStop').innerHTML=stops.map((s,i)=>{
+      const name=(stopMap[s.stop]||{}).name_tc||s.stop;
+      return `<option value="${s.stop}" data-name="${name.replace(/"/g,'&quot;')}">${i+1}. ${name}</option>`;
+    }).join('');
+    document.getElementById('cfgStopSection').classList.remove('hidden');
+    document.getElementById('saveBtn').disabled=false;
+    hint.textContent=`${stops.length} 個車站`;
+  }catch(e){hint.textContent='Error: '+e.message;}
+}
+
+function openMtrSettings(){
+  const lineOpts=Object.keys(MTR_LINES).map(lc=>`<option value="${lc}">${MTR_LINES[lc].name}</option>`).join('');
+  document.getElementById('modalBody').innerHTML=`
+    <label>出發站</label>
+    <div class="mtr-row"><select id="cfgFromLine" onchange="cfgFillSta('from')">${lineOpts}</select><select id="cfgFromSta"></select></div>
+    <label>到達站</label>
+    <div class="mtr-row"><select id="cfgToLine" onchange="cfgFillSta('to')">${lineOpts}</select><select id="cfgToSta"></select></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="calcMtrPaths()">查詢官方路線</button>
+    <div class="search-hint" id="cfgHint"></div>
+    <div id="cfgPathList" style="margin-top:12px"></div>`;
+  document.getElementById('cfgFromLine').value='TML';
+  document.getElementById('cfgToLine').value='EAL';
+  cfgFillSta('from'); cfgFillSta('to');
+  const fromSta=document.getElementById('cfgFromSta');
+  const toSta=document.getElementById('cfgToSta');
+  [...fromSta.options].forEach(o=>{ if(o.text==='第一城') fromSta.value=o.value; });
+  [...toSta.options].forEach(o=>{ if(o.text==='九龍塘') toSta.value=o.value; });
+  renderCfgListMtr();
+}
+function cfgFillSta(which){
+  const lineEl=document.getElementById(which==='from'?'cfgFromLine':'cfgToLine');
+  const staEl=document.getElementById(which==='from'?'cfgFromSta':'cfgToSta');
+  const sts=MTR_LINES[lineEl.value]?.stations||[];
+  staEl.innerHTML=sts.map(s=>`<option value="${s.c}">${s.zh}</option>`).join('');
+}
+async function calcMtrPaths(){
+  const from=document.getElementById('cfgFromSta').value;
+  const to=document.getElementById('cfgToSta').value;
+  const hint=document.getElementById('cfgHint');
+  const list=document.getElementById('cfgPathList');
+  _selectedPath=null;
+  document.getElementById('saveBtn').disabled=true;
+  if(!from||!to||from===to){ hint.textContent='請選擇不同的出發與到達站'; list.innerHTML=''; return; }
+  hint.innerHTML='<span class="spinner"></span> 向港鐵查詢官方路線…';
+  list.innerHTML='';
+  try{
+    const paths=await fetchOfficialMtrRoutes(from, to);
+    if(!paths.length){ hint.textContent='找不到路線'; return; }
+    const trainNote = (paths.firstTrain && paths.lastTrain) ? `（頭班 ${paths.firstTrain} · 尾班 ${paths.lastTrain}）` : '';
+    hint.textContent=`找到 ${paths.length} 條官方建議路線${trainNote}`;
+    list.innerHTML=paths.map((p,idx)=>{
+      const ix=p.legs.length-1;
+      const summary=p.legs.map(legLabel).join('<br>');
+      const badge=ix===0?'直達':`轉車 ${ix} 次`;
+      const timeStr=p.journeyTime?` · 約 ${p.journeyTime} 分鐘`:'';
+      const fareStr=p.fare?` · $${parseFloat(p.fare).toFixed(1)}`:'';
+      return `<button class="path-option" id="pathOpt${idx}" onclick="selectPath(${idx})">
+        <div style="font-weight:700;margin-bottom:4px">${badge}${timeStr} · 共 ${p.totalStops} 站<span style="color:#f87171">${fareStr}</span></div>
+        <div style="font-size:.85rem;color:var(--muted);line-height:1.55">${summary}</div>
+      </button>`;
+    }).join('');
+    window._pathOptions=paths;
+  }catch(e){
+    hint.textContent='查詢失敗：'+e.message;
+  }
+}
+function selectPath(idx){
+  _selectedPath=window._pathOptions[idx];
+  document.querySelectorAll('.path-option').forEach((el,i)=>el.classList.toggle('selected',i===idx));
+  document.getElementById('saveBtn').disabled=false;
+}
+function renderCfgListMtr(){
+  const el=document.getElementById('cfgList');
+  if(!mtrPresets.length){el.innerHTML='<div style="color:var(--muted);font-size:.85rem">（無）</div>';return;}
+  el.innerHTML=mtrPresets.map((p,i)=>{
+    const a=MTR_STATIONS[p.from]?.zh||p.from, b=MTR_STATIONS[p.to]?.zh||p.to;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #2a2a3a;font-size:.9rem"><span><strong style="color:var(--accent)">${a}</strong> → ${b}</span><button class="icon-btn danger" style="width:28px;height:28px" onclick="removeMtr(${i});openSettings()">✕</button></div>`;
+  }).join('');
+}
+
+function saveCurrentPreset(){
+  if(currentTab==='kmb'){
+    const meta=_cfg.meta; if(!meta) return;
+    const stopId=document.getElementById('cfgStop').value;
+    const opt=document.getElementById('cfgStop').selectedOptions[0];
+    const stopName=opt?.dataset.name||stopId;
+    const preset={route:meta.route,bound:meta.bound,service_type:String(meta.service_type),stopId,stopName,dest_tc:meta.dest_tc||'',orig_tc:meta.orig_tc||''};
+    if(kmbPresets.some(p=>p.route===preset.route&&p.stopId===preset.stopId&&p.bound===preset.bound)){alert('此組合已存在');return;}
+    kmbPresets.push(preset); saveKmb(); closeSettings(); renderKmb();
+  } else {
+    if(!_selectedPath) return;
+    const from=document.getElementById('cfgFromSta').value;
+    const to=document.getElementById('cfgToSta').value;
+    const preset={
+      from,
+      to,
+      legs: _selectedPath.legs,
+      totalStops: _selectedPath.totalStops,
+      journeyTime: _selectedPath.journeyTime,
+      fare: _selectedPath.fare,
+      firstTrain: _selectedPath.firstTrain,
+      lastTrain: _selectedPath.lastTrain
+    };
+    if(mtrPresets.some(p=>p.from===from&&p.to===to&&JSON.stringify(p.legs)===JSON.stringify(preset.legs))){alert('此組合已存在');return;}
+    mtrPresets.push(preset); saveMtr(); closeSettings(); renderMtr();
+  }
+}
+
+// INIT
+switchTab('kmb');
+renderKmb();
+renderMtr();
+loadWeather();
+setInterval(refreshKmb, 30000);
+setInterval(refreshMtr, 30000);
+setInterval(loadWeather, 30*60*1000);
+setInterval(updateWeatherClock, 1000);
+document.getElementById('settingsModal').addEventListener('click', e => { if(e.target.id==='settingsModal') closeSettings(); });
   </script>
 </body>
 </html>
