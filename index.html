@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1a1a2e" />
+  <meta name="description" content="Hong Kong KMB Bus ETA + HKO 9-day Weather Forecast - Split View" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>HK Transit · 九巴 + 天文台</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚌</text></svg>" />
+  <style>
+    :root {
+      --bg: #0f0f1a;
+      --card: #1a1a2e;
+      --card-hover: #22223a;
+      --accent: #4cc9f0;
+      --accent2: #f72585;
+      --text: #e8e8f0;
+      --muted: #a0a0b8;
+      --success: #4ade80;
+      --warning: #fbbf24;
+      --danger: #f87171;
+      --radius: 14px;
+      --shadow: 0 6px 24px rgba(0,0,0,0.3);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", "PingFang TC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: var(--card);
+      border-bottom: 1px solid #2a2a3a;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    header h1 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+    .lang-toggle, .settings-btn {
+      background: var(--card-hover);
+      border: 1px solid #333;
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 18px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .lang-toggle:hover, .settings-btn:hover { border-color: var(--accent); }
+
+    /* ===== SPLIT LAYOUT ===== */
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      min-height: calc(100vh - 56px);
+    }
+    @media (max-width: 900px) {
+      .main { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      padding: 16px 18px 80px;
+      overflow-y: auto;
+      max-height: calc(100vh - 56px);
+    }
+    .panel-weather {
+      border-right: 1px solid #2a2a3a;
+      background: linear-gradient(180deg, #0f0f1a 0%, #12121f 100%);
+    }
+    .panel-bus {
+      background: linear-gradient(180deg, #0f0f1a 0%, #151525 100%);
+    }
+
+    .panel-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* ===== CARDS ===== */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+
+    /* ===== WEATHER ===== */
+    .general {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .forecast-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .day-row {
+      display: grid;
+      grid-template-columns: 56px 36px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--card-hover);
+      border-radius: 12px;
+      transition: background 0.15s;
+    }
+    .day-row.today {
+      border: 1px solid var(--accent);
+      background: linear-gradient(90deg, #1a2a3a, #1a1a2e);
+    }
+    .day-name { font-weight: 700; font-size: 0.9rem; }
+    .day-date { font-size: 0.72rem; color: var(--muted); }
+    .weather-icon { font-size: 1.5rem; text-align: center; }
+    .temps { font-weight: 600; font-size: 0.95rem; white-space: nowrap; }
+    .temps span { color: var(--muted); font-weight: 400; }
+    .psr-badge {
+      font-size: 0.68rem;
+      padding: 2px 7px;
+      border-radius: 8px;
+      background: rgba(76,201,240,0.15);
+      color: var(--accent);
+      white-space: nowrap;
+    }
+    .weather-desc {
+      grid-column: 1 / -1;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 2px;
+      line-height: 1.3;
+    }
+
+    /* ===== BUS PRESETS ===== */
+    .preset-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(255,255,255,0.05);
+      position: relative;
+    }
+    .preset-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+    .preset-route {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .preset-dest {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .preset-stop {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    .preset-actions {
+      display: flex;
+      gap: 6px;
+    }
+    .icon-btn {
+      background: none;
+      border: 1px solid #333;
+      color: var(--muted);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .icon-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+    .eta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-top: 1px solid #2a2a3a;
+    }
+    .eta-row:first-of-type { border-top: none; padding-top: 0; }
+    .eta-time {
+      font-weight: 800;
+      font-size: 1.2rem;
+      min-width: 64px;
+      text-align: right;
+    }
+    .eta-time.soon { color: var(--success); }
+    .eta-time.mid { color: var(--warning); }
+    .eta-time.late { color: var(--muted); }
+    .eta-meta { font-size: 0.8rem; color: var(--muted); }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+    }
+    .empty-state p { margin: 8px 0 16px; font-size: 0.9rem; }
+
+    /* ===== SETTINGS MODAL ===== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(6px);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal {
+      background: var(--card);
+      border-radius: 18px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 20px;
+      border: 1px solid #333;
+    }
+    .modal h2 {
+      font-size: 1.15rem;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+      margin-top: 12px;
+    }
+    .modal input, .modal select {
+      width: 100%;
+      background: var(--card-hover);
+      border: 1px solid #333;
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+    .modal input:focus, .modal select:focus { border-color: var(--accent); }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #4cc9f0, #4895ef);
+      color: #0f0f1a;
+    }
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid #444;
+      color: var(--text);
+    }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .search-hint {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .status {
+      text-align: center;
+      padding: 16px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2.5px solid #333;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .update-time {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-align: right;
+      margin-top: 8px;
+    }
+
+    .hidden { display: none !important; }
+
+    /* Mobile bottom bar */
+    .mobile-bar {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(26,26,46,0.95);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid #2a2a3a;
+      padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+      z-index: 90;
+      gap: 10px;
+    }
+    @media (max-width: 900px) {
+      .mobile-bar { display: flex; }
+      .panel { padding-bottom: 90px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🚌 HK Transit</h1>
+    <div class="header-actions">
+      <button class="lang-toggle" id="langBtn" onclick="toggleLang()">繁</button>
+      <button class="settings-btn" onclick="openSettings()">⚙️ 設定路線</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <!-- LEFT: WEATHER -->
+    <div class="panel panel-weather">
+      <div class="panel-title">
+        <span>🌤 <span data-i18n="weather">天文台九天預報</span></span>
+        <span class="update-time" id="weatherUpdate" style="margin:0"></span>
+      </div>
+
+      <div class="card">
+        <div class="general" id="generalSituation">Loading…</div>
+      </div>
+
+      <div class="forecast-list" id="forecastList">
+        <div class="status"><span class="spinner"></span> Loading…</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: BUS -->
+    <div class="panel panel-bus">
+      <div class="panel-title">
+        <span>🚌 <span data-i18n="myBuses">我的巴士</span></span>
+        <button class="icon-btn" onclick="refreshAllEtas()" title="Refresh all">↻</button>
+      </div>
+
+      <div id="presetsContainer">
+        <!-- presets will be rendered here -->
+      </div>
+    </div>
+  </div>
+
+  <div class="mobile-bar">
+    <button class="btn btn-secondary" style="flex:1" onclick="openSettings()">⚙️ 設定路線</button>
+    <button class="btn btn-primary" style="flex:1" onclick="refreshAllEtas()">↻ 更新到站</button>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div class="modal-overlay hidden" id="settingsModal">
+    <div class="modal">
+      <h2>
+        <span data-i18n="addRoute">新增 / 編輯路線</span>
+        <button class="icon-btn" onclick="closeSettings()">✕</button>
+      </h2>
+
+      <label>1. 輸入路線號碼</label>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="cfgRoute" placeholder="e.g. 49X, 74D, 288C, 1A" autocomplete="off" style="flex:1" />
+        <button class="btn btn-primary" style="flex:0 0 auto; padding:10px 16px" onclick="fetchRouteDirections()">Fetch</button>
+      </div>
+      <div class="search-hint" id="cfgHint" style="margin-top:6px"></div>
+
+      <!-- Step 2: Choose direction -->
+      <div id="cfgDirectionSection" class="hidden" style="margin-top:16px">
+        <label>2. 選擇方向 (Choose Direction)</label>
+        <div id="cfgDirectionList" style="display:flex; flex-direction:column; gap:8px; margin-top:6px"></div>
+      </div>
+
+      <!-- Step 3: Choose stop -->
+      <div id="cfgStopSection" class="hidden" style="margin-top:16px">
+        <label>3. 選擇車站 (Choose Stop)</label>
+        <select id="cfgStop" style="margin-top:6px">
+          <option value="">—</option>
+        </select>
+      </div>
+
+      <div class="modal-actions" style="margin-top:20px">
+        <button class="btn btn-secondary" onclick="closeSettings()">取消</button>
+        <button class="btn btn-primary" id="savePresetBtn" onclick="savePreset()" disabled>儲存</button>
+      </div>
+
+      <hr style="border:none;border-top:1px solid #333;margin:20px 0 12px">
+      <div style="font-size:0.85rem;color:var(--muted)" data-i18n="currentPresets">目前已儲存的路線：</div>
+      <div id="cfgPresetList" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <script>
+    // ========== STATE ==========
+    let lang = localStorage.getItem('hk_lang') || 'tc';
+    let weatherData = null;
+    let presets = JSON.parse(localStorage.getItem('hk_presets') || '[]');
+    let stopMap = null;          // cached full stop list
+    let etaTimers = {};
+    let configStops = [];        // temporary stops while configuring
+
+    // ========== i18n ==========
+    const i18n = {
+      weather: { tc: '天文台九天預報', en: 'HKO 9-Day Forecast' },
+      myBuses: { tc: '我的巴士', en: 'My Buses' },
+      noPresets: { tc: '尚未設定任何巴士站', en: 'No bus stops configured yet' },
+      addRoute: { tc: '新增 / 編輯路線', en: 'Add / Edit Route' },
+      routeNum: { tc: '路線號碼', en: 'Route Number' },
+      direction: { tc: '方向', en: 'Direction' },
+      serviceType: { tc: '服務類型 (通常為 1)', en: 'Service Type (usually 1)' },
+      selectStop: { tc: '選擇車站', en: 'Select Stop' },
+      currentPresets: { tc: '目前已儲存的路線：', en: 'Currently saved routes:' },
+      mins: { tc: '分鐘', en: 'min' },
+      arriving: { tc: '即將到達', en: 'Arriving' },
+      today: { tc: '今日', en: 'Today' },
+      noEta: { tc: '暫無到站資料', en: 'No ETA' },
+    };
+    function t(k) { return i18n[k] ? i18n[k][lang] : k; }
+
+    function applyI18n() {
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        el.textContent = t(el.getAttribute('data-i18n'));
+      });
+      document.getElementById('langBtn').textContent = lang === 'tc' ? 'EN' : '繁';
+    }
+
+    function toggleLang() {
+      lang = lang === 'tc' ? 'en' : 'tc';
+      localStorage.setItem('hk_lang', lang);
+      applyI18n();
+      if (weatherData) renderWeather(weatherData);
+      renderAllPresets();
+    }
+
+    // ========== WEATHER ==========
+    const iconMap = {
+      50:'☀️',51:'🌤',52:'⛅',53:'☁️',54:'🌫',
+      60:'🌧',61:'🌦',62:'🌧',63:'⛈',64:'⛈',
+      65:'🌧',70:'❄️',71:'❄️',72:'❄️',73:'❄️',
+      74:'❄️',75:'❄️',76:'🌫',77:'❄️',80:'⛈',
+      81:'⛈',82:'⛈',83:'⛈',84:'⛈',85:'🌧',
+      90:'🌡',91:'🌡',92:'💨',93:'💨'
+    };
+
+    async function loadWeather() {
+      try {
+        const res = await fetch(`https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=${lang==='tc'?'tc':'en'}`);
+        weatherData = await res.json();
+        renderWeather(weatherData);
+      } catch (e) {
+        document.getElementById('forecastList').innerHTML = `<div class="status">Failed to load weather</div>`;
+      }
+    }
+
+    function renderWeather(data) {
+      document.getElementById('generalSituation').textContent = data.generalSituation || '';
+      const list = document.getElementById('forecastList');
+      const todayStr = new Date().toISOString().slice(0,10).replace(/-/g,'');
+
+      list.innerHTML = data.weatherForecast.map((d, i) => {
+        const isToday = d.forecastDate === todayStr || i === 0;
+        const icon = iconMap[d.ForecastIcon] || '🌤';
+        const dateStr = d.forecastDate.slice(4,6) + '/' + d.forecastDate.slice(6);
+        return `
+          <div class="day-row ${isToday ? 'today' : ''}">
+            <div>
+              <div class="day-name">${isToday ? t('today') : d.week}</div>
+              <div class="day-date">${dateStr}</div>
+            </div>
+            <div class="weather-icon">${icon}</div>
+            <div>
+              <div class="temps">${d.forecastMaxtemp.value}° <span>/ ${d.forecastMintemp.value}°</span></div>
+              <div class="weather-desc">${d.forecastWeather}</div>
+            </div>
+            <div class="psr-badge">PSR ${d.PSR}</div>
+          </div>`;
+      }).join('');
+
+      const ut = new Date(data.updateTime);
+      document.getElementById('weatherUpdate').textContent =
+        ut.toLocaleTimeString(lang==='tc'?'zh-HK':'en-HK', {hour:'2-digit',minute:'2-digit'});
+    }
+
+    // ========== PRESETS ==========
+    function savePresetsToStorage() {
+      localStorage.setItem('hk_presets', JSON.stringify(presets));
+    }
+
+    function renderAllPresets() {
+      const container = document.getElementById('presetsContainer');
+
+      if (presets.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state" id="emptyState">
+            <div style="font-size:2.5rem">🚏</div>
+            <p>${t('noPresets')}</p>
+            <button class="btn btn-primary" style="max-width:200px;margin:0 auto" onclick="openSettings()">
+              + 新增路線
+            </button>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = presets.map((p, idx) => {
+        const orig = lang === 'tc' ? (p.orig_tc || '') : (p.orig_en || '');
+        const dest = lang === 'tc' ? (p.dest_tc || '') : (p.dest_en || '');
+        const directionText = orig && dest ? `${orig} → ${dest}` : (dest || '');
+        const boundLabel = p.bound === 'O'
+          ? (lang === 'tc' ? '去程' : 'Outbound')
+          : (lang === 'tc' ? '回程' : 'Inbound');
+
+        return `
+        <div class="preset-card" id="preset-${idx}">
+          <div class="preset-header">
+            <div style="flex:1; min-width:0">
+              <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap">
+                <div class="preset-route">${p.route}</div>
+                <span style="font-size:0.75rem; color:var(--muted); background:#2a2a3a; padding:2px 8px; border-radius:8px">${boundLabel}</span>
+              </div>
+              <div class="preset-dest" style="margin-top:4px; line-height:1.35">${directionText}</div>
+              <div class="preset-stop">📍 ${p.stopName}</div>
+            </div>
+            <div class="preset-actions">
+              <button class="icon-btn" onclick="refreshOneEta(${idx})" title="Refresh">↻</button>
+              <button class="icon-btn danger" onclick="removePreset(${idx})" title="Remove">✕</button>
+            </div>
+          </div>
+          <div class="eta-container" id="eta-${idx}">
+            <div class="status"><span class="spinner"></span> Loading…</div>
+          </div>
+        </div>`;
+      }).join('');
+
+      // load all ETAs
+      presets.forEach((_, idx) => loadEtaForPreset(idx));
+    }
+
+    async function loadEtaForPreset(idx) {
+      const p = presets[idx];
+      if (!p) return;
+      const box = document.getElementById(`eta-${idx}`);
+      if (!box) return;
+
+      try {
+        const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/eta/${p.stopId}/${p.route}/${p.service_type || '1'}`);
+        const json = await res.json();
+        let etas = (json.data || []).filter(e => e.eta);
+
+        // fallback to stop-eta if needed
+        if (etas.length === 0) {
+          const res2 = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${p.stopId}`);
+          const json2 = await res2.json();
+          etas = (json2.data || []).filter(e => e.route === p.route && e.eta);
+        }
+
+        renderPresetEtas(idx, etas);
+      } catch (e) {
+        box.innerHTML = `<div class="status">Error</div>`;
+      }
+    }
+
+    function renderPresetEtas(idx, etas) {
+      const box = document.getElementById(`eta-${idx}`);
+      if (!box) return;
+
+      if (!etas || etas.length === 0) {
+        box.innerHTML = `<div class="status">${t('noEta')}</div>`;
+        return;
+      }
+
+      const now = Date.now();
+      box.innerHTML = etas.slice(0, 4).map(e => {
+        const mins = Math.round((new Date(e.eta) - now) / 60000);
+        let timeStr, cls;
+        if (mins <= 1) { timeStr = t('arriving'); cls = 'soon'; }
+        else if (mins <= 5) { timeStr = mins + ' ' + t('mins'); cls = 'soon'; }
+        else if (mins <= 15) { timeStr = mins + ' ' + t('mins'); cls = 'mid'; }
+        else { timeStr = mins + ' ' + t('mins'); cls = 'late'; }
+
+        const dest = lang==='tc' ? e.dest_tc : e.dest_en;
+        const rmk = lang==='tc' ? (e.rmk_tc||'') : (e.rmk_en||'');
+
+        return `
+          <div class="eta-row">
+            <div class="eta-meta">${dest}${rmk ? ' · '+rmk : ''}</div>
+            <div class="eta-time ${cls}">${timeStr}</div>
+          </div>`;
+      }).join('');
+    }
+
+    function refreshOneEta(idx) { loadEtaForPreset(idx); }
+    function refreshAllEtas() {
+      presets.forEach((_, i) => loadEtaForPreset(i));
+    }
+
+    function removePreset(idx) {
+      if (!confirm(lang==='tc' ? '刪除此路線？' : 'Remove this route?')) return;
+      presets.splice(idx, 1);
+      savePresetsToStorage();
+      renderAllPresets();
+      renderCfgPresetList();
+    }
+
+    // ========== SETTINGS / CONFIG ==========
+    function openSettings() {
+      document.getElementById('settingsModal').classList.remove('hidden');
+      document.getElementById('cfgRoute').value = '';
+      document.getElementById('cfgHint').textContent = '';
+      document.getElementById('cfgDirectionSection').classList.add('hidden');
+      document.getElementById('cfgStopSection').classList.add('hidden');
+      document.getElementById('savePresetBtn').disabled = true;
+      window._selectedMeta = null;
+      configStops = [];
+      renderCfgPresetList();
+      // focus input
+      setTimeout(() => document.getElementById('cfgRoute').focus(), 100);
+    }
+
+    function closeSettings() {
+      document.getElementById('settingsModal').classList.add('hidden');
+    }
+
+    function renderCfgPresetList() {
+      const list = document.getElementById('cfgPresetList');
+      if (presets.length === 0) {
+        list.innerHTML = `<div style="color:var(--muted);font-size:0.85rem">（無）</div>`;
+        return;
+      }
+      list.innerHTML = presets.map((p, i) => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #2a2a3a;font-size:0.9rem">
+          <span><strong style="color:var(--accent)">${p.route}</strong> · ${p.stopName}</span>
+          <button class="icon-btn danger" style="width:28px;height:28px" onclick="removePreset(${i})">✕</button>
+        </div>
+      `).join('');
+    }
+
+    async function ensureStopMap() {
+      if (stopMap) return;
+      const res = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/stop');
+      const json = await res.json();
+      stopMap = {};
+      json.data.forEach(s => { stopMap[s.stop] = s; });
+    }
+
+    // New flow: 1. Fetch directions → 2. User picks direction → 3. Load stops
+
+    async function fetchRouteDirections() {
+      const route = document.getElementById('cfgRoute').value.trim().toUpperCase();
+      const hint = document.getElementById('cfgHint');
+      const dirSection = document.getElementById('cfgDirectionSection');
+      const stopSection = document.getElementById('cfgStopSection');
+      const dirList = document.getElementById('cfgDirectionList');
+
+      // reset later steps
+      dirSection.classList.add('hidden');
+      stopSection.classList.add('hidden');
+      document.getElementById('savePresetBtn').disabled = true;
+      window._selectedMeta = null;
+
+      if (!route) {
+        hint.textContent = lang === 'tc' ? '請輸入路線號碼' : 'Please enter a route number';
+        return;
+      }
+
+      hint.innerHTML = `<span class="spinner"></span> ${lang==='tc'?'搜尋中…':'Searching…'}`;
+
+      try {
+        const rRes = await fetch('https://data.etabus.gov.hk/v1/transport/kmb/route/');
+        const rJson = await rRes.json();
+        const matches = rJson.data.filter(r => r.route === route);
+
+        if (matches.length === 0) {
+          hint.textContent = lang === 'tc' ? '找不到此路線' : 'Route not found';
+          return;
+        }
+
+        hint.textContent = `${matches.length} ${lang==='tc'?'個方向/班次':'direction(s) found'}`;
+
+        dirList.innerHTML = matches.map((m, i) => {
+          const o = lang === 'tc' ? m.orig_tc : m.orig_en;
+          const d = lang === 'tc' ? m.dest_tc : m.dest_en;
+          const boundLabel = m.bound === 'O'
+            ? (lang === 'tc' ? '去程' : 'Outbound')
+            : (lang === 'tc' ? '回程' : 'Inbound');
+          const svcNote = m.service_type !== '1' && m.service_type !== 1
+            ? ` <span style="color:var(--warning)">(特別班次 type ${m.service_type})</span>`
+            : '';
+
+          return `
+            <button class="btn btn-secondary" style="text-align:left; padding:12px 14px; font-weight:500"
+              onclick='selectDirection(${JSON.stringify(m).replace(/'/g, "&#39;")})'>
+              <div style="font-weight:700; margin-bottom:2px">${boundLabel}${svcNote}</div>
+              <div style="font-size:0.9rem; color:var(--text)">${o} → ${d}</div>
+            </button>`;
+        }).join('');
+
+        dirSection.classList.remove('hidden');
+      } catch (e) {
+        hint.textContent = 'Error: ' + e.message;
+      }
+    }
+
+    async function selectDirection(meta) {
+      window._selectedMeta = meta;
+      const stopSection = document.getElementById('cfgStopSection');
+      const sel = document.getElementById('cfgStop');
+      const hint = document.getElementById('cfgHint');
+
+      // highlight selected button
+      document.querySelectorAll('#cfgDirectionList button').forEach(btn => {
+        btn.style.borderColor = '#444';
+        btn.style.background = 'transparent';
+      });
+      // (simple visual feedback handled by click)
+
+      hint.innerHTML = `<span class="spinner"></span> ${lang==='tc'?'載入車站…':'Loading stops…'}`;
+      stopSection.classList.add('hidden');
+      document.getElementById('savePresetBtn').disabled = true;
+
+      try {
+        await ensureStopMap();
+        const dir = meta.bound === 'O' ? 'outbound' : 'inbound';
+        const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/route-stop/${meta.route}/${dir}/${meta.service_type}`);
+        const json = await res.json();
+        configStops = json.data || [];
+
+        if (configStops.length === 0) {
+          hint.textContent = lang === 'tc' ? '此方向沒有車站資料' : 'No stops for this direction';
+          return;
+        }
+
+        sel.innerHTML = configStops.map((s, i) => {
+          const info = stopMap[s.stop] || {};
+          const name = lang === 'tc' ? (info.name_tc || s.stop) : (info.name_en || s.stop);
+          return `<option value="${s.stop}" data-name="${name.replace(/"/g,'&quot;')}">${i+1}. ${name}</option>`;
+        }).join('');
+
+        stopSection.classList.remove('hidden');
+        document.getElementById('savePresetBtn').disabled = false;
+        hint.textContent = `${configStops.length} ${lang==='tc'?'個車站':'stops'} — 請選擇你的上車站`;
+      } catch (e) {
+        hint.textContent = 'Error: ' + e.message;
+      }
+    }
+
+    function savePreset() {
+      const meta = window._selectedMeta;
+      if (!meta) return;
+
+      const stopId = document.getElementById('cfgStop').value;
+      const opt = document.getElementById('cfgStop').selectedOptions[0];
+      const stopName = opt ? opt.dataset.name : stopId;
+
+      if (!stopId) return;
+
+      const preset = {
+        route: meta.route,
+        bound: meta.bound,
+        service_type: String(meta.service_type),
+        stopId,
+        stopName,
+        dest_tc: meta.dest_tc || '',
+        dest_en: meta.dest_en || '',
+        orig_tc: meta.orig_tc || '',
+        orig_en: meta.orig_en || ''
+      };
+
+      const exists = presets.some(p =>
+        p.route === preset.route &&
+        p.stopId === preset.stopId &&
+        p.bound === preset.bound &&
+        String(p.service_type) === preset.service_type
+      );
+      if (exists) {
+        alert(lang === 'tc' ? '此組合已存在' : 'This combination already exists');
+        return;
+      }
+
+      presets.push(preset);
+      savePresetsToStorage();
+      closeSettings();
+      renderAllPresets();
+    }
+
+    // ========== INIT ==========
+    applyI18n();
+    loadWeather();
+    renderAllPresets();
+
+    // Auto refresh all ETAs every 45 seconds
+    setInterval(refreshAllEtas, 45000);
+
+    // Close modal on overlay click
+    document.getElementById('settingsModal').addEventListener('click', e => {
+      if (e.target.id === 'settingsModal') closeSettings();
+    });
+
+    // Enter key on route input triggers Fetch
+    document.getElementById('cfgRoute').addEventListener('keydown', e => {
+      if (e.key === 'Enter') fetchRouteDirections();
+    });
+  </script>
+</body>
+</html>
