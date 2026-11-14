@@ -1,7 +1,7 @@
 {
-  "name": "HK Transit - KMB + HKO",
-  "short_name": "HK Transit",
-  "description": "Hong Kong KMB bus ETAs and HKO 9-day weather forecast",
+  "name": "A9 App",
+  "short_name": "A9",
+  "description": "KMB + GMB Minibus ETA + HKO Weather",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0f0f1a",
