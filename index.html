@@ -68,8 +68,6 @@
     .path-option:hover,.path-option.selected{border-color:var(--accent);background:rgba(76,201,240,.08)}
     .leg-block{margin-top:10px;padding-top:10px;border-top:1px solid #2a2a3a}
     .leg-title{font-size:.85rem;font-weight:700;margin-bottom:6px}
-    .fare-box{text-align:center;padding:12px;background:linear-gradient(135deg,#1a2a3a,#1a1a2e);border-radius:12px;margin:8px 0;border:1px solid #2a3a4a}
-    .fare-amount{font-size:1.6rem;font-weight:800;color:var(--accent)}
     .train-hours{display:inline-block;font-size:.74rem;background:rgba(76,201,240,.12);color:var(--accent);padding:2px 8px;border-radius:6px;margin-top:5px}
   </style>
 </head>
@@ -141,7 +139,6 @@ function forceRefresh(){
   if('caches' in window) caches.keys().then(ns => ns.forEach(n => caches.delete(n)));
   location.reload(true);
 }
-
 function switchTab(tab){
   currentTab = tab;
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
@@ -186,7 +183,7 @@ function renderKmb(){
     return;
   }
   box.innerHTML = kmbPresets.map((p,i) => {
-    const dir = (p.orig_tc&&p.dest_tc)?`${p.orig_tc} → ${p.dest_tc}`:(p.dest_tc||'');
+    const dir = (p.orig_tc&&p.dest_tc) ? `${p.orig_tc} → ${p.dest_tc}` : (p.dest_tc||'');
     const bound = p.bound==='O'?'去程':'回程';
     return `<div class="preset-card"><div class="preset-header"><div style="flex:1;min-width:0"><div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span class="preset-route">${p.route}</span><span style="font-size:.72rem;background:#2a2a3a;padding:2px 7px;border-radius:8px;color:var(--muted)">${bound}</span></div><div class="preset-dest">${dir}</div><div class="preset-stop">📍 ${p.stopName}</div></div><div style="display:flex;gap:6px"><button class="icon-btn" onclick="loadKmbEta(${i})">↻</button><button class="icon-btn danger" onclick="removeKmb(${i})">✕</button></div></div><div id="kmb-eta-${i}"><div class="status"><span class="spinner"></span> 載入中…</div></div></div>`;
   }).join('');
@@ -268,7 +265,7 @@ async function fetchOfficialMtrRoutes(fromCode, toCode){
   const firstTrain = data.firstTrain?.time || '';
   const lastTrain = data.lastTrain?.time || '';
 
-  const mapped = data.routes.map(route => {
+  return data.routes.map(route => {
     const rawPath = route.path || [];
     const stationCodes = [];
     const segmentLines = [];
@@ -316,15 +313,12 @@ async function fetchOfficialMtrRoutes(fromCode, toCode){
       totalStops: Math.max(0, stationCodes.length - 1),
       ix: Math.max(0, legs.length - 1),
       journeyTime: route.time,
+      walkingTime: route.walkingTime ?? null,
       fare: octopusFare,
       firstTrain,
       lastTrain
     };
   }).filter(r => r.legs.length > 0);
-
-  mapped.firstTrain = firstTrain;
-  mapped.lastTrain = lastTrain;
-  return mapped;
 }
 
 function legLabel(leg){
@@ -351,7 +345,10 @@ function renderMtr(){
     const firstLine=legs[0]?.line;
     const ix = legs.length>1 ? `轉車 ${legs.length-1} 次` : '直達';
     const totalStops = p.totalStops || legs.reduce((s,l)=>s+(l.hops||1),0);
-    const timeBadge = p.journeyTime ? ` · 約 ${p.journeyTime} 分鐘` : '';
+    const walkNote = (p.walkingTime !== undefined && p.walkingTime !== null && Number(p.walkingTime) > 0)
+      ? `（步行 ${p.walkingTime} 分鐘）`
+      : '';
+    const timeBadge = p.journeyTime ? ` · 約 ${p.journeyTime} 分鐘${walkNote}` : '';
     const fareStr = p.fare ? `$${parseFloat(p.fare).toFixed(1)}` : '';
     const trainHours = (p.firstTrain || p.lastTrain)
       ? `<div class="train-hours">頭班車 ${p.firstTrain||'--:--'} · 尾班車 ${p.lastTrain||'--:--'}</div>`
@@ -387,14 +384,16 @@ async function loadMtrEta(i){
   const el=document.getElementById('mtr-eta-'+i);
   if(!p||!el) return;
 
-  if(!p.journeyTime || !p.fare || !p.lastTrain){
+  if(!p.journeyTime || !p.fare || !p.lastTrain || p.walkingTime === undefined){
     try{
       const routes = await fetchOfficialMtrRoutes(p.from, p.to);
       if(routes.length){
-        p.journeyTime = routes[0].journeyTime;
-        p.fare = routes[0].fare;
-        p.firstTrain = routes[0].firstTrain;
-        p.lastTrain = routes[0].lastTrain;
+        const matched = routes.find(r => JSON.stringify(r.legs) === JSON.stringify(p.legs)) || routes[0];
+        p.journeyTime = matched.journeyTime;
+        p.walkingTime = matched.walkingTime;
+        p.fare = matched.fare;
+        p.firstTrain = matched.firstTrain;
+        p.lastTrain = matched.lastTrain;
         saveMtr();
         renderMtr();
         return;
@@ -544,13 +543,16 @@ async function calcMtrPaths(){
   try{
     const paths=await fetchOfficialMtrRoutes(from, to);
     if(!paths.length){ hint.textContent='找不到路線'; return; }
-    const trainNote = (paths.firstTrain && paths.lastTrain) ? `（頭班 ${paths.firstTrain} · 尾班 ${paths.lastTrain}）` : '';
+    const trainNote = (paths[0].firstTrain && paths[0].lastTrain) ? `（頭班 ${paths[0].firstTrain} · 尾班 ${paths[0].lastTrain}）` : '';
     hint.textContent=`找到 ${paths.length} 條官方建議路線${trainNote}`;
     list.innerHTML=paths.map((p,idx)=>{
       const ix=p.legs.length-1;
       const summary=p.legs.map(legLabel).join('<br>');
       const badge=ix===0?'直達':`轉車 ${ix} 次`;
-      const timeStr=p.journeyTime?` · 約 ${p.journeyTime} 分鐘`:'';
+      const walkNote = (p.walkingTime !== undefined && p.walkingTime !== null && Number(p.walkingTime) > 0)
+        ? `（步行 ${p.walkingTime} 分鐘）`
+        : '';
+      const timeStr=p.journeyTime?` · 約 ${p.journeyTime} 分鐘${walkNote}`:'';
       const fareStr=p.fare?` · $${parseFloat(p.fare).toFixed(1)}`:'';
       return `<button class="path-option" id="pathOpt${idx}" onclick="selectPath(${idx})">
         <div style="font-weight:700;margin-bottom:4px">${badge}${timeStr} · 共 ${p.totalStops} 站<span style="color:#f87171">${fareStr}</span></div>
@@ -595,6 +597,7 @@ function saveCurrentPreset(){
       legs: _selectedPath.legs,
       totalStops: _selectedPath.totalStops,
       journeyTime: _selectedPath.journeyTime,
+      walkingTime: _selectedPath.walkingTime,
       fare: _selectedPath.fare,
       firstTrain: _selectedPath.firstTrain,
       lastTrain: _selectedPath.lastTrain
