@@ -209,7 +209,7 @@ const MTR_NET = {"lines":{"AEL":{"name":"機場快綫","stations":[{"c":"HOK","z
         return `<div class="preset-card"><div class="preset-header"><div style="flex:1;min-width:0"><div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span class="preset-route">${p.route}</span><span style="font-size:.72rem;background:#2a2a3a;padding:2px 7px;border-radius:8px;color:var(--muted)">${bound}</span></div><div class="preset-dest">${dir}</div><div class="preset-stop">📍 ${p.stopName}</div></div><div style="display:flex;gap:6px"><button class="icon-btn" onclick="loadKmbEta(${i})">↻</button><button class="icon-btn danger" onclick="removeKmb(${i})">✕</button></div></div><div id="kmb-eta-${i}"><div class="status"><span class="spinner"></span> 載入中…</div></div></div>`;
       }).join('');
       kmbPresets.forEach((_,i)=>loadKmbEta(i));
-    }
+    
     async function loadKmbEta(i){
       const p=kmbPresets[i], el=document.getElementById('kmb-eta-'+i); if(!p||!el) return;
       try{
