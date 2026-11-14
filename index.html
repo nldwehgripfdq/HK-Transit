@@ -337,7 +337,7 @@ const MTR_NET = {"lines":{"AEL":{"name":"機場快綫","stations":[{"c":"HOK","z
           <div class="preset-header">
             <div style="flex:1;min-width:0">
               <div class="preset-route">${firstLine?lineDot(firstLine):''}${fromZh}</div>
-              <div class="preset-dest">往 ${toZh} · ${ix} · 共 ${totalStops} 站</div>
+              <div class="preset-dest">往 ${toZh} · ${ix} · 共 ${totalStops} 站 · <span id="mtr-fare-${i}" style="color:#f87171;font-weight:700"></span></div>
               <div class="preset-stop" style="color:var(--muted);font-weight:400;line-height:1.5;margin-top:6px">${pathText}</div>
             </div>
             <div style="display:flex;gap:6px">
@@ -345,7 +345,6 @@ const MTR_NET = {"lines":{"AEL":{"name":"機場快綫","stations":[{"c":"HOK","z
               <button class="icon-btn danger" onclick="removeMtr(${i})">✕</button>
             </div>
           </div>
-          <div id="mtr-fare-${i}"></div>
           <div id="mtr-eta-${i}"><div class="status"><span class="spinner"></span> 載入中…</div></div>
         </div>`;
       }).join('');
@@ -403,9 +402,7 @@ const MTR_NET = {"lines":{"AEL":{"name":"機場快綫","stations":[{"c":"HOK","z
         const fid=MTR_STATIONS[p.from]?.id, tid=MTR_STATIONS[p.to]?.id;
         const fare=fareMap[fid+'-'+tid];
         if(fareEl){
-          fareEl.innerHTML = fare!==undefined
-            ? `<div class="fare-box"><div class="fare-amount">$${parseFloat(fare).toFixed(1)}</div><div style="font-size:.75rem;color:var(--muted)">八達通成人</div></div>`
-            : `<div class="fare-box"><div style="font-size:.8rem;color:var(--muted)">票價暫無資料</div></div>`;
+          fareEl.textContent = fare!==undefined ? `$${parseFloat(fare).toFixed(1)}` : '';
         }
       }catch(e){ if(fareEl) fareEl.innerHTML=''; }
 
@@ -529,13 +526,6 @@ const MTR_NET = {"lines":{"AEL":{"name":"機場快綫","stations":[{"c":"HOK","z
       document.getElementById('cfgFromLine').value='TML';
       document.getElementById('cfgToLine').value='EAL';
       cfgFillSta('from'); cfgFillSta('to');
-      // colour legend (native <option> cannot show colour)
-      const leg = document.createElement('div');
-      leg.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin-top:10px';
-      leg.innerHTML = Object.keys(MTR_LINES).map(lc => `<span style="display:inline-flex;align-items:center;font-size:.72rem;color:var(--muted)">${lineDot(lc)}${MTR_LINES[lc].name}</span>`).join('');
-      const body = document.getElementById('modalBody');
-      const hint = document.getElementById('cfgHint');
-      if(hint) body.insertBefore(leg, hint);
       // try select City One / Kowloon Tong if present
       const fromSta=document.getElementById('cfgFromSta');
       const toSta=document.getElementById('cfgToSta');
